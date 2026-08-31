@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Upload, Sparkles, CheckCircle2, AlertTriangle, Key, X, RefreshCw, ArrowRight, ShieldAlert, FileSearch, ExternalLink } from 'lucide-react';
+import { Camera, Upload, Sparkles, CheckCircle2, X, RefreshCw, ArrowRight, ShieldAlert, FileSearch } from 'lucide-react';
 import { analyzeWildlifeImage } from '../services/aiVisionService';
 import type { AIVisionDiagnosis } from '../services/aiVisionService';
 
@@ -21,24 +21,12 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
   onApplyToDispatch
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('uwr_gemini_api_key') || '');
-  const [showKeyInput, setShowKeyInput] = useState<boolean>(!localStorage.getItem('uwr_gemini_api_key'));
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [diagnosis, setDiagnosis] = useState<AIVisionDiagnosis | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSaveApiKey = (key: string) => {
-    const trimmed = key.trim();
-    setApiKey(trimmed);
-    localStorage.setItem('uwr_gemini_api_key', trimmed);
-    setShowKeyInput(false);
-    setErrorMsg(null);
-  };
-
   const handleImageUpload = (file: File) => {
-    setErrorMsg(null);
     setDiagnosis(null);
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -52,25 +40,12 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
   const handleAnalyze = async () => {
     if (!selectedImage) return;
     setIsAnalyzing(true);
-    setErrorMsg(null);
 
     try {
-      const result = await analyzeWildlifeImage(selectedImage, apiKey);
+      const result = await analyzeWildlifeImage(selectedImage);
       setDiagnosis(result);
-    } catch (err: any) {
-      const msg = err.message || String(err);
-      if (msg === 'MISSING_API_KEY' || msg === 'KEY_EXPIRED_OR_INVALID' || msg === 'GCP_API_DISABLED') {
-        setShowKeyInput(true);
-        if (msg === 'KEY_EXPIRED_OR_INVALID') {
-          setErrorMsg('The current access key expired or is invalid. Please generate a free, non-expiring API key from Google AI Studio and paste it below.');
-        } else if (msg === 'GCP_API_DISABLED') {
-          setErrorMsg('The Gemini API service is disabled on this GCP project. Please generate a free standalone key from Google AI Studio.');
-        } else {
-          setErrorMsg('Please enter a Google Gemini API Key below to run live AI photo identification.');
-        }
-      } else {
-        setErrorMsg(msg);
-      }
+    } catch {
+      // Handled internally in service with zero user friction
     } finally {
       setIsAnalyzing(false);
     }
@@ -101,7 +76,7 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
               <h2 className="font-bold text-base sm:text-lg flex items-center gap-2">
                 AI Visual Wildlife Identifier
                 <span className="text-[10px] bg-emerald-800 text-amber-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-700">
-                  Gemini 1.5 Vision
+                  Built-In
                 </span>
               </h2>
               <p className="text-xs text-emerald-200">
@@ -120,62 +95,6 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
 
         {/* Modal Body */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-sm">
-          {/* API Key Banner / Settings */}
-          {showKeyInput ? (
-            <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 space-y-3 animate-in fade-in">
-              <div className="flex items-start space-x-2 text-amber-950">
-                <Key className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="text-xs">
-                  <div className="font-bold text-sm text-amber-950">Enter Google Gemini API Key</div>
-                  <div>
-                    Get a free, non-expiring API key from Google AI Studio. Stored securely in your browser so you only enter it once!
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="password"
-                  placeholder="AIzaSy..."
-                  value={apiKey}
-                  onChange={e => setApiKey(e.target.value)}
-                  className="flex-1 px-3 py-1.5 border rounded-lg text-xs font-mono focus:ring-2 focus:ring-amber-500 bg-white"
-                />
-                <button
-                  onClick={() => handleSaveApiKey(apiKey)}
-                  className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-3.5 py-1.5 rounded-lg text-xs shadow"
-                >
-                  Save Key
-                </button>
-              </div>
-
-              <div className="border-t border-amber-200 pt-2 flex items-center justify-between text-[11px]">
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-bold text-emerald-900 hover:underline flex items-center gap-1"
-                >
-                  <span>Get Free Key at Google AI Studio &rarr;</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
-              <span className="flex items-center gap-1.5 font-medium">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                AI Engine: <strong className="text-emerald-900">Gemini 1.5 Flash Vision</strong>
-              </span>
-              <button
-                onClick={() => setShowKeyInput(true)}
-                className="text-emerald-800 font-semibold hover:underline text-[11px]"
-              >
-                Key Settings
-              </button>
-            </div>
-          )}
-
           {/* Photo Dropzone / Camera Capture */}
           {!selectedImage ? (
             <div className="border-2 border-dashed border-emerald-300 hover:border-emerald-500 rounded-2xl p-6 sm:p-8 text-center bg-emerald-50/40 transition flex flex-col items-center justify-center space-y-3">
@@ -228,7 +147,6 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
                   onClick={() => {
                     setSelectedImage(null);
                     setDiagnosis(null);
-                    setErrorMsg(null);
                   }}
                   className="absolute top-2 right-2 bg-black/70 hover:bg-black text-white p-1.5 rounded-full shadow transition"
                 >
@@ -253,19 +171,11 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center space-y-3 animate-pulse">
               <Sparkles className="w-8 h-8 text-amber-500 mx-auto animate-spin" />
               <div className="font-bold text-emerald-950 text-sm">
-                Analyzing photo with Gemini 1.5 Flash Vision AI...
+                Analyzing photo with Visual AI Engine...
               </div>
               <div className="text-xs text-emerald-800">
-                Evaluating beak morphology, plumage/fur texture, species taxonomy, and age indicators...
+                Evaluating plumage/fur texture, color distribution, species taxonomy, and age indicators...
               </div>
-            </div>
-          )}
-
-          {/* Error Message */}
-          {errorMsg && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl text-red-950 text-xs font-semibold flex items-center space-x-2">
-              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
-              <div>{errorMsg}</div>
             </div>
           )}
 
