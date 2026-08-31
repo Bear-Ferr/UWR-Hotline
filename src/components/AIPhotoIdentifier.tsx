@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Upload, Sparkles, CheckCircle2, AlertTriangle, Key, X, RefreshCw, ArrowRight, ShieldAlert, FileSearch } from 'lucide-react';
+import { Camera, Upload, Sparkles, CheckCircle2, AlertTriangle, X, RefreshCw, ArrowRight, ShieldAlert, FileSearch } from 'lucide-react';
 import { analyzeWildlifeImage } from '../services/aiVisionService';
 import type { AIVisionDiagnosis } from '../services/aiVisionService';
 
@@ -21,20 +21,11 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
   onApplyToDispatch
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('uwr_gemini_api_key') || '');
-  const [showKeyInput, setShowKeyInput] = useState<boolean>(!localStorage.getItem('uwr_gemini_api_key'));
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [diagnosis, setDiagnosis] = useState<AIVisionDiagnosis | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
-
-  const handleSaveApiKey = (key: string) => {
-    const trimmed = key.trim();
-    setApiKey(trimmed);
-    localStorage.setItem('uwr_gemini_api_key', trimmed);
-    setShowKeyInput(false);
-  };
 
   const handleImageUpload = (file: File) => {
     setErrorMsg(null);
@@ -54,37 +45,10 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
     setErrorMsg(null);
 
     try {
-      if (apiKey) {
-        const result = await analyzeWildlifeImage(selectedImage, apiKey);
-        setDiagnosis(result);
-      } else {
-        // Fallback Demo / Simulated AI Analysis when no API key is provided
-        await new Promise(r => setTimeout(r, 1200));
-        setDiagnosis({
-          speciesName: 'American Robin (Juvenile Fledgling)',
-          scientificName: 'Turdus migratorius',
-          category: 'Passerine',
-          isNative: true,
-          isProhibited: false,
-          ageStage: 'Feathered Fledgling',
-          physicalCondition: 'Feathered Fledgling',
-          confidenceScore: 0.94,
-          visualObservations: [
-            'Speckled breast and developing wing pin feathers characteristic of young Turdidae.',
-            'Short tail feathers indicate bird has recently left nest and is learning to hop.',
-            'No visible bleeding or wing asymmetry detected.'
-          ],
-          recommendedAction: 'Fledgling Protocol: Parent birds feed fledglings on ground. Advise caller to LEAVE ALONE unless outdoor cats are present.',
-          rawAnalysisText: 'Demo Mode Analysis'
-        });
-      }
+      const result = await analyzeWildlifeImage(selectedImage);
+      setDiagnosis(result);
     } catch (err: any) {
-      if (err.message === 'MISSING_API_KEY') {
-        setShowKeyInput(true);
-        setErrorMsg('Please enter a Google Gemini API Key to enable live AI photo identification.');
-      } else {
-        setErrorMsg(err.message || 'Failed to analyze image. Please try again.');
-      }
+      setErrorMsg(err.message || 'Failed to analyze image. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -134,68 +98,6 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
 
         {/* Modal Body */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-sm">
-          {/* API Key Banner / Settings */}
-          {showKeyInput ? (
-            <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 space-y-3">
-              <div className="flex items-start space-x-2 text-amber-950">
-                <Key className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="text-xs">
-                  <div className="font-bold text-sm text-amber-950">Gemini AI Key Setup</div>
-                  <div>
-                    To perform live AI photo diagnoses, paste a free Google Gemini API Key below. (Saved locally in your browser).
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="password"
-                  placeholder="AIzaSy..."
-                  value={apiKey}
-                  onChange={e => setApiKey(e.target.value)}
-                  className="flex-1 px-3 py-1.5 border rounded-lg text-xs font-mono focus:ring-2 focus:ring-amber-500 bg-white"
-                />
-                <button
-                  onClick={() => handleSaveApiKey(apiKey)}
-                  className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-3 py-1.5 rounded-lg text-xs shadow"
-                >
-                  Save Key
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between text-[11px] text-amber-900 border-t border-amber-200/80 pt-2">
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-bold underline text-emerald-900 hover:text-emerald-700"
-                >
-                  Get free key at Google AI Studio &rarr;
-                </a>
-
-                <button
-                  onClick={() => setShowKeyInput(false)}
-                  className="text-gray-600 hover:text-gray-900 font-semibold"
-                >
-                  Skip & Use Demo Mode
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
-              <span className="flex items-center gap-1.5 font-medium">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                AI Engine: {apiKey ? 'Live Gemini Vision API' : '⚡ Demo Mode (No Key Set)'}
-              </span>
-              <button
-                onClick={() => setShowKeyInput(true)}
-                className="text-emerald-800 font-semibold hover:underline text-[11px]"
-              >
-                {apiKey ? 'Change API Key' : 'Add Gemini Key'}
-              </button>
-            </div>
-          )}
-
           {/* Photo Dropzone / Camera Capture */}
           {!selectedImage ? (
             <div className="border-2 border-dashed border-emerald-300 hover:border-emerald-500 rounded-2xl p-6 sm:p-8 text-center bg-emerald-50/40 transition flex flex-col items-center justify-center space-y-3">

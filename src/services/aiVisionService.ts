@@ -12,16 +12,13 @@ export interface AIVisionDiagnosis {
   rawAnalysisText: string;
 }
 
+const DEFAULT_GEMINI_KEY = 'AIzaSyDVDrRvfPYc29tXhSvs_NoGsDTyCuFhbtc';
+
 export async function analyzeWildlifeImage(
   base64Image: string,
-  apiKey?: string
+  customApiKey?: string
 ): Promise<AIVisionDiagnosis> {
-  const activeKey = apiKey || localStorage.getItem('uwr_gemini_api_key') || '';
-
-  if (!activeKey) {
-    // Return a helpful fallback if API key is not yet configured
-    throw new Error('MISSING_API_KEY');
-  }
+  const activeKey = customApiKey || localStorage.getItem('uwr_gemini_api_key') || DEFAULT_GEMINI_KEY;
 
   // Strip prefix if present (e.g. data:image/jpeg;base64,)
   const cleanedBase64 = base64Image.includes('base64,')
@@ -100,7 +97,6 @@ Note Oregon State Non-Native / Prohibited species: Opossum, Nutria, Fox Squirrel
       rawAnalysisText: rawText
     };
   } catch (err: any) {
-    if (err.message === 'MISSING_API_KEY') throw err;
     throw new Error(`AI Analysis failed: ${err.message || err}`);
   }
 }
