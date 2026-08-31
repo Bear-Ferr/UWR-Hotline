@@ -493,8 +493,15 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                         </span>
                       </div>
 
-                      <div className="text-xs text-emerald-800 italic font-medium">
-                        {matchReason}
+                      <div className="text-xs space-y-1 pt-0.5">
+                        <div className="text-gray-700 font-medium">
+                          <span className="font-bold text-gray-900">All Specialties: </span>
+                          {rehabber.speciesSpecialties.join(', ')}
+                        </div>
+                        <div className="text-emerald-900 font-semibold text-[11px] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                          <span>🎯 Match Reason:</span>
+                          <span>{matchReason}</span>
+                        </div>
                       </div>
                     </div>
 
