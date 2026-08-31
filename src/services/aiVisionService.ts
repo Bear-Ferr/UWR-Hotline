@@ -12,16 +12,6 @@ export interface AIVisionDiagnosis {
   rawAnalysisText: string;
 }
 
-// Built-in key resolver
-const getBuiltInKey = () => {
-  try {
-    const encoded = 'QVEuQWI4Uk42STF6RmpPSE5JSHExSTZueU51dmxZYk9Oa0lBIDFLWnVmdEdOOUZqMDNYS0E=';
-    return atob(encoded).replace(/\s/g, '');
-  } catch {
-    return '';
-  }
-};
-
 export async function analyzeWildlifeImage(
   base64Image: string,
   customApiKey?: string
@@ -30,10 +20,10 @@ export async function analyzeWildlifeImage(
     customApiKey ||
     localStorage.getItem('uwr_gemini_api_key') ||
     import.meta.env.VITE_GEMINI_API_KEY ||
-    getBuiltInKey();
+    '';
 
   if (!activeKey) {
-    throw new Error('Please enter a valid Google Gemini API key from Google AI Studio (aistudio.google.com/app/apikey).');
+    throw new Error('MISSING_API_KEY');
   }
 
   // Strip prefix if present (e.g. data:image/jpeg;base64,)
@@ -47,7 +37,7 @@ export async function analyzeWildlifeImage(
 Analyze the uploaded photo of wildlife accurately and provide a strict JSON response with key diagnostic details.
 
 Be extremely precise:
-- Carefully distinguish adult birds (bright solid adult plumage, dark head/cap, full length adult tail, yellow beak) from fledglings/nestlings (speckled breast, short tail, yellow gape flanges).
+- Carefully distinguish adult birds (bright solid adult plumage, dark head/cap, full length tail, yellow beak) from fledglings/nestlings (speckled breast, short tail, yellow gape flanges).
 - Identify species accurately (e.g. Adult American Robin, Red-tailed Hawk, Great Blue Heron, Fawn, Raccoon, Opossum, etc.).
 
 Return ONLY a valid JSON object matching this exact TypeScript structure:
@@ -64,14 +54,12 @@ Return ONLY a valid JSON object matching this exact TypeScript structure:
   "recommendedAction": "Action advice for hotline dispatcher"
 }`;
 
-  // Use gemini-3.6-flash which supports vision & text with 200 OK status
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${activeKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`;
 
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': activeKey
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
       contents: [
@@ -96,8 +84,11 @@ Return ONLY a valid JSON object matching this exact TypeScript structure:
 
   if (!response.ok) {
     const errText = await response.text();
+    if (response.status === 401 || errText.includes('UNAUTHENTICATED') || errText.includes('ACCESS_TOKEN')) {
+      throw new Error('KEY_EXPIRED_OR_INVALID');
+    }
     if (response.status === 403) {
-      throw new Error('GCP_API_DISABLED: The Gemini API service is currently disabled on this GCP project (Project 603085179503). Enable it at: https://console.developers.google.com/apis/api/generativelanguage.googleapis.com/overview?project=603085179503 or paste a free key from Google AI Studio (aistudio.google.com/app/apikey).');
+      throw new Error('GCP_API_DISABLED');
     }
     throw new Error(`Gemini API Error (${response.status}): ${errText}`);
   }
