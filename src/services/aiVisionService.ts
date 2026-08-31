@@ -54,7 +54,7 @@ Note Oregon State Non-Native / Prohibited species: Opossum, Nutria, Fox Squirrel
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${activeKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -82,8 +82,11 @@ Note Oregon State Non-Native / Prohibited species: Opossum, Nutria, Fox Squirrel
 
     if (!response.ok) {
       const errText = await response.text();
+      if (errText.includes('disabled') || errText.includes('generativelanguage.googleapis.com')) {
+        throw new Error('Gemini API Disabled: Please enable the Gemini API in Google Cloud Console or generate a free key at Google AI Studio (aistudio.google.com/app/apikey).');
+      }
       if (errText.includes('leaked')) {
-        throw new Error('API Key Disabled: Google reported this API key as leaked because it was posted in public code. Please generate a new API key in Google AI Studio and paste it in the key settings box.');
+        throw new Error('API Key Disabled: Google reported this key as leaked in public code. Please generate a new key at Google AI Studio and paste it in the key settings box.');
       }
       throw new Error(`Gemini API Error (${response.status}): ${errText}`);
     }
