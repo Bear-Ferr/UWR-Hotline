@@ -1,5 +1,5 @@
 import React from 'react';
-import { PhoneCall, BookOpen, Search, Clock, UserCheck, ShieldAlert, LogOut } from 'lucide-react';
+import { PhoneCall, BookOpen, Search, Clock, UserCheck, ShieldAlert, LogOut, Sparkles } from 'lucide-react';
 import type { UserAccount } from '../services/storageService';
 
 export type ActiveTab = 'dispatch' | 'directory' | 'wildlife-guide' | 'history' | 'knowledge-base';
@@ -10,6 +10,7 @@ interface NavigationProps {
   currentUser: UserAccount;
   onOpenAuth: () => void;
   onLogout: () => void;
+  onOpenAIPhotoID?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -17,7 +18,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   setActiveTab,
   currentUser,
   onOpenAuth,
-  onLogout
+  onLogout,
+  onOpenAIPhotoID
 }) => {
   return (
     <header className="bg-emerald-900 text-white shadow-md border-b border-emerald-800 sticky top-0 z-40">
@@ -42,14 +44,26 @@ export const Navigation: React.FC<NavigationProps> = ({
           </div>
         </div>
 
-        {/* User Profile & Logout */}
-        <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
+        {/* User Profile, AI Button & Logout */}
+        <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
+          {onOpenAIPhotoID && (
+            <button
+              onClick={onOpenAIPhotoID}
+              className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow flex items-center space-x-1 text-xs sm:text-sm transition"
+              title="Diagnose photo with Gemini AI Vision"
+            >
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">AI Photo ID</span>
+              <span className="sm:hidden">AI ID</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenAuth}
             className="flex items-center space-x-1.5 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-emerald-700 transition text-xs sm:text-sm"
           >
             <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-            <div className="text-left max-w-[90px] sm:max-w-none truncate">
+            <div className="text-left max-w-[80px] sm:max-w-none truncate">
               <div className="font-semibold text-[11px] sm:text-xs leading-none text-white truncate">{currentUser.name}</div>
               <div className="text-[9px] sm:text-[10px] text-emerald-300 leading-tight truncate">{currentUser.role}</div>
             </div>

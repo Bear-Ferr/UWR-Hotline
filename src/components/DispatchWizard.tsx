@@ -4,18 +4,20 @@ import type { RoutingInput, RoutingRecommendation } from '../services/routingEng
 import { storageService } from '../services/storageService';
 import type { RescueReport } from '../services/storageService';
 import { OREGON_COUNTIES } from '../data/uwrData';
-import { Phone, PhoneForwarded, AlertTriangle, ShieldAlert, CheckCircle, Info, Clock, MapPin, User, Save, RefreshCw, Navigation, Building } from 'lucide-react';
+import { Phone, PhoneForwarded, AlertTriangle, ShieldAlert, CheckCircle, Info, Clock, MapPin, User, Save, RefreshCw, Navigation, Building, Sparkles } from 'lucide-react';
 
 interface DispatchWizardProps {
   initialSpeciesCategory?: string;
   initialSpeciesName?: string;
   onReportSaved: () => void;
+  onOpenAIPhotoID?: () => void;
 }
 
 export const DispatchWizard: React.FC<DispatchWizardProps> = ({
   initialSpeciesCategory,
   initialSpeciesName,
-  onReportSaved
+  onReportSaved,
+  onOpenAIPhotoID
 }) => {
   // Intake Form State
   const [callerName, setCallerName] = useState('');
@@ -240,13 +242,25 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Specific Common Name (Optional)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-gray-700">Specific Common Name (Optional)</label>
+                  {onOpenAIPhotoID && (
+                    <button
+                      type="button"
+                      onClick={onOpenAIPhotoID}
+                      className="text-[11px] font-bold text-emerald-950 hover:bg-amber-400 flex items-center gap-1 bg-amber-500 px-2 py-0.5 rounded shadow-sm transition"
+                    >
+                      <Sparkles className="w-3 h-3 text-emerald-950" />
+                      <span>Diagnose Photo with AI</span>
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   placeholder="e.g. Robin, Red-Tailed Hawk, Fawn, Squirrel"
                   value={specificSpecies}
                   onChange={e => setSpecificSpecies(e.target.value)}
-                  className="w-full px-3 py-1.5 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full px-3 py-1.5 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm"
                 />
               </div>
             </div>
