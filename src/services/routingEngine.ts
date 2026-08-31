@@ -23,7 +23,7 @@ export interface RoutingRecommendation {
   criticalAlerts: string[];
   recommendedRehabbers: { rehabber: Rehabber; isOpenNow: boolean; matchReason: string }[];
   recommendedCarriers: { carrier: CritterCarrier; isOpenNow: boolean }[];
-  officialReferral?: OfficialContact;
+  officialReferrals: OfficialContact[];
   outOfRegionCenter?: ReferralCenter;
   callerAdviceScripts: string[];
 }
@@ -35,8 +35,16 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
   let isProhibited = false;
   let isOutOfRegion = false;
   let prohibitedTitle: string | undefined = undefined;
-  let officialReferral: OfficialContact | undefined = undefined;
+  const officialReferrals: OfficialContact[] = [];
   let outOfRegionCenter: ReferralCenter | undefined = undefined;
+
+  // Helper to safely push unique official contacts
+  const addOfficialReferral = (id: string) => {
+    const contact = OFFICIAL_CONTACTS.find(c => c.id === id);
+    if (contact && !officialReferrals.some(existing => existing.id === id)) {
+      officialReferrals.push(contact);
+    }
+  };
 
   // 1. Check Out of Region / Outside Watershed
   if (input.location === 'Out of Region / Other County' || (input.externalCounty && !input.externalCounty.includes('Douglas'))) {
@@ -70,7 +78,9 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
     prohibitedTitle = 'Healthy Live-Trapped Animal (PROHIBITED)';
     const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'live-trapped');
     if (rule) policyWarnings.push(rule);
-    officialReferral = OFFICIAL_CONTACTS.find(c => c.id === 'f5-wildlife');
+    addOfficialReferral('f5-wildlife');
+    addOfficialReferral('odfw-roseburg');
+    addOfficialReferral('saving-grace');
   }
 
   // 3. Check Fledgling / Baby Bird Flag
@@ -84,8 +94,9 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
   if (input.isBandedPigeon) {
     isProhibited = true;
     prohibitedTitle = 'Banded Racing Pigeon (PROHIBITED)';
-    officialReferral = OFFICIAL_CONTACTS.find(c => c.id === 'banded-pigeon');
-    criticalAlerts.push('BANDED PIGEON: Belongs to private owner. Call Banded Pigeon Hotline at 1-800-755-2778 to locate owner.');
+    addOfficialReferral('banded-pigeon');
+    addOfficialReferral('avian-specialist');
+    criticalAlerts.push('BANDED PIGEON: Belongs to private owner. Call Banded Pigeon Hotline at 1-800-755-2778 or Avian Specialist.');
   }
 
   // 5. Check Special Circumstance: Marine Seal Flag
@@ -94,7 +105,8 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
     prohibitedTitle = 'Marine Mammal / Seal (UWR Prohibited)';
     const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'seals-marine');
     if (rule) policyWarnings.push(rule);
-    officialReferral = OFFICIAL_CONTACTS.find(c => c.id === 'oregon-shores');
+    addOfficialReferral('oregon-shores');
+    addOfficialReferral('osp-dispatch');
     criticalAlerts.push('WARNING: Keep caller at least 30 feet away from seals on beach. Capturing seals without OSP permission incurs severe state fines!');
   }
 
@@ -104,7 +116,9 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
     prohibitedTitle = 'Domestic or Exotic Pet (UWR Prohibited)';
     const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'domestic-exotics');
     if (rule) policyWarnings.push(rule);
-    officialReferral = OFFICIAL_CONTACTS.find(c => c.id === 'animal-control');
+    addOfficialReferral('saving-grace');
+    addOfficialReferral('animal-control');
+    addOfficialReferral('spca');
   }
 
   // 7. Check Non-Native / Prohibited Mammals and Birds
@@ -124,7 +138,9 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
     prohibitedTitle = 'Non-Native or State Prohibited Species';
     const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'non-native-species');
     if (rule) policyWarnings.push(rule);
-    officialReferral = OFFICIAL_CONTACTS.find(c => c.id === 'odfw-roseburg');
+    addOfficialReferral('odfw-roseburg');
+    addOfficialReferral('f5-wildlife');
+    addOfficialReferral('osp-dispatch');
   }
 
   // 8. Check Raccoon Restrictions
@@ -134,10 +150,14 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
       prohibitedTitle = 'Adult Raccoon (PROHIBITED)';
       const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'coyotes-raccoons-cougars');
       if (rule) policyWarnings.push(rule);
-      officialReferral = OFFICIAL_CONTACTS.find(c => c.id === 'osp-dispatch');
+      addOfficialReferral('osp-dispatch');
+      addOfficialReferral('odfw-roseburg');
+      addOfficialReferral('roseburg-police');
     } else if (input.isCityRaccoon) {
       const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'city-raccoons');
       if (rule) policyWarnings.push(rule);
+      addOfficialReferral('f5-wildlife');
+      addOfficialReferral('odfw-roseburg');
     }
   }
 
@@ -148,39 +168,73 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
     const currentDay = today.getDate();
     const isPastSept30 = currentMonth > 8 || (currentMonth === 8 && currentDay > 30);
 
-    if (input.ageStage === 'Adult / Older' || isPastSept30) {
+    if (input.ageStage === 'Adult / Older') {
       isProhibited = true;
-      prohibitedTitle = 'Deer Older Than Fawns or Past Sept 30 Cutoff';
-      const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'older-deer');
+      prohibitedTitle = 'Adult Deer (PROHIBITED)';
+      const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'adult-deer');
       if (rule) policyWarnings.push(rule);
-      officialReferral = OFFICIAL_CONTACTS.find(c => c.id === 'osp-dispatch');
+      addOfficialReferral('osp-dispatch');
+      addOfficialReferral('odfw-roseburg');
+    } else if (isPastSept30) {
+      isProhibited = true;
+      prohibitedTitle = 'Fawn Past Sept 30 Cutoff (PROHIBITED)';
+      const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'fawn-cutoff');
+      if (rule) policyWarnings.push(rule);
+      addOfficialReferral('odfw-roseburg');
+      addOfficialReferral('osp-dispatch');
     }
   }
 
-  // 10. Match Eligible UWR Rehabbers (if within watershed)
-  const eligibleRehabbers = REHABBERS.filter(r =>
-    r.categories.includes(input.category) || r.categories.some(c => c.toLowerCase() === input.category.toLowerCase())
-  );
+  // 10. Match Local UWR Rehabbers (if not prohibited & inside watershed)
+  const recommendedRehabbers: { rehabber: Rehabber; isOpenNow: boolean; matchReason: string }[] = [];
 
-  const rankedRehabbers = eligibleRehabbers.map(r => {
-    const isOpenNow = r.startHour === 0 && r.endHour === 24 ? true : currentHour >= r.startHour && currentHour < r.endHour;
-    let matchReason = `Specializes in ${r.speciesSpecialties.join(', ')}`;
-    if (input.location && r.location.toLowerCase().includes(input.location.toLowerCase())) {
-      matchReason += ` • Located nearby in ${r.location}`;
-    }
-    return { rehabber: r, isOpenNow, matchReason };
-  }).sort((a, b) => (b.isOpenNow ? 1 : 0) - (a.isOpenNow ? 1 : 0));
+  if (!isProhibited && !isOutOfRegion) {
+    REHABBERS.forEach(rehabber => {
+      // Check if rehabber handles this category or species
+      const handlesCategory = rehabber.categories.includes(input.category);
+      const handlesSpecies = rehabber.speciesSpecialties.some(s =>
+        s.toLowerCase().includes(lowerSpecies) || lowerSpecies.includes(s.toLowerCase())
+      );
+
+      if (handlesCategory || handlesSpecies) {
+        // Calculate operating hours
+        const isOpenNow =
+          rehabber.startHour === 0 && rehabber.endHour === 24
+            ? true
+            : currentHour >= rehabber.startHour && currentHour < rehabber.endHour;
+
+        let matchReason = `Specialist in ${input.category}`;
+        if (handlesSpecies) matchReason = `Direct specialist for ${input.specificSpecies || input.category}`;
+        if (rehabber.location.toLowerCase().includes(input.location.toLowerCase())) {
+          matchReason += ` • Local to ${input.location}`;
+        }
+
+        recommendedRehabbers.push({ rehabber, isOpenNow, matchReason });
+      }
+    });
+
+    // Sort: Open now first, then local match
+    recommendedRehabbers.sort((a, b) => {
+      if (a.isOpenNow && !b.isOpenNow) return -1;
+      if (!a.isOpenNow && b.isOpenNow) return 1;
+      return 0;
+    });
+  }
 
   // 11. Match Critter Carriers
-  const recommendedCarriers = CRITTER_CARRIERS.map(c => ({ carrier: c, isOpenNow: true }));
+  const recommendedCarriers: { carrier: CritterCarrier; isOpenNow: boolean }[] = [];
+  CRITTER_CARRIERS.forEach(carrier => {
+    const isLocal = carrier.location.toLowerCase().includes(input.location.toLowerCase());
+    if (isLocal || carrier.hours.toLowerCase().includes('anytime')) {
+      recommendedCarriers.push({ carrier, isOpenNow: true });
+    }
+  });
 
-  // 12. Caller Advice Scripts
-  const callerAdviceScripts = [
-    'Place clean, soft cloth at bottom of a paper bag or cardboard box with air holes.',
-    'Keep animal in a QUIET, DARK, WARM, and SECURED place away from children and pets.',
-    'DO NOT handle, hold, or pet the animal (wild animals view human touch as predator threat).',
-    'DO NOT give any food or liquid except water (Hummingbirds allowed 1/4 tsp sugar in 1 tsp water).',
-    'MEDIA RESTRICTION: Remind caller NOT to post photos/videos of rescue on news or social media.'
+  // 12. Standard Advice Scripts to Read to Caller
+  const callerAdviceScripts: string[] = [
+    'WARMTH & DARKNESS: Put animal in a dark, quiet, ventilated cardboard box with a towel. Keep away from pets and kids.',
+    'DO NOT FEED OR GIVE WATER: Feeding injured or cold wildlife can cause fatal aspiration or metabolic shock.',
+    'SAFETY FIRST: Never touch bats, adult raccoons, adult deer, or raptors with bare hands. Use heavy leather gloves or blanket.'
   ];
 
   return {
@@ -189,9 +243,9 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
     prohibitedTitle,
     policyWarnings,
     criticalAlerts,
-    recommendedRehabbers: rankedRehabbers,
+    recommendedRehabbers,
     recommendedCarriers,
-    officialReferral,
+    officialReferrals,
     outOfRegionCenter,
     callerAdviceScripts
   };
