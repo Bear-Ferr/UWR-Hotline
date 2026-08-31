@@ -122,16 +122,19 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
   }
 
   // 7. Check Non-Native / Prohibited Mammals and Birds
-  const lowerSpecies = (input.specificSpecies || '').toLowerCase();
+  const hasSpecificSpecies = Boolean(input.specificSpecies && input.specificSpecies.trim().length > 0);
+  const lowerSpecies = hasSpecificSpecies ? input.specificSpecies!.trim().toLowerCase() : '';
+
   const isNonNative =
-    lowerSpecies.includes('opossum') ||
-    lowerSpecies.includes('nutria') ||
-    lowerSpecies.includes('fox squirrel') ||
-    lowerSpecies.includes('starling') ||
-    lowerSpecies.includes('sparrow') ||
-    lowerSpecies.includes('collared dove') ||
-    lowerSpecies.includes('coyote') ||
-    lowerSpecies.includes('cougar');
+    hasSpecificSpecies &&
+    (lowerSpecies.includes('opossum') ||
+      lowerSpecies.includes('nutria') ||
+      lowerSpecies.includes('fox squirrel') ||
+      lowerSpecies.includes('starling') ||
+      lowerSpecies.includes('sparrow') ||
+      lowerSpecies.includes('collared dove') ||
+      lowerSpecies.includes('coyote') ||
+      lowerSpecies.includes('cougar'));
 
   if (isNonNative) {
     isProhibited = true;
@@ -144,7 +147,7 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
   }
 
   // 8. Check Raccoon Restrictions
-  if (lowerSpecies.includes('raccoon') || input.category === 'Raccoons') {
+  if ((hasSpecificSpecies && lowerSpecies.includes('raccoon')) || input.category === 'Raccoons') {
     if (input.ageStage === 'Adult / Older') {
       isProhibited = true;
       prohibitedTitle = 'Adult Raccoon (PROHIBITED)';
@@ -162,7 +165,7 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
   }
 
   // 9. Check Deer Rules
-  if (lowerSpecies.includes('deer') || input.category === 'Fawns/Bears') {
+  if ((hasSpecificSpecies && lowerSpecies.includes('deer')) || input.category === 'Fawns/Bears') {
     const today = new Date();
     const currentMonth = today.getMonth(); // 0 = Jan, 8 = Sept
     const currentDay = today.getDate();
@@ -190,11 +193,15 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
 
   if (!isProhibited && !isOutOfRegion) {
     REHABBERS.forEach(rehabber => {
-      // Check if rehabber handles this category or species
+      // Check category match
       const handlesCategory = rehabber.categories.includes(input.category);
-      const handlesSpecies = rehabber.speciesSpecialties.some(s =>
-        s.toLowerCase().includes(lowerSpecies) || lowerSpecies.includes(s.toLowerCase())
-      );
+
+      // Check species match ONLY if specificSpecies is provided
+      const handlesSpecies =
+        hasSpecificSpecies &&
+        rehabber.speciesSpecialties.some(s =>
+          s.toLowerCase().includes(lowerSpecies) || lowerSpecies.includes(s.toLowerCase())
+        );
 
       if (handlesCategory || handlesSpecies) {
         // Calculate operating hours
@@ -204,7 +211,7 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
             : currentHour >= rehabber.startHour && currentHour < rehabber.endHour;
 
         let matchReason = `Specialist in ${input.category}`;
-        if (handlesSpecies) matchReason = `Direct specialist for ${input.specificSpecies || input.category}`;
+        if (handlesSpecies) matchReason = `Direct specialist for ${input.specificSpecies}`;
         if (rehabber.location.toLowerCase().includes(input.location.toLowerCase())) {
           matchReason += ` • Local to ${input.location}`;
         }
