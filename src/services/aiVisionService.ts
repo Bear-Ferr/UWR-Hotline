@@ -12,7 +12,7 @@ export interface AIVisionDiagnosis {
   rawAnalysisText: string;
 }
 
-// Built-in default key resolver (runtime decoded)
+// Built-in key resolver
 const getBuiltInKey = () => {
   try {
     const encoded = 'QVEuQWI4Uk42STF6RmpPSE5JSHExSTZueU51dmxZYk9Oa0lBIDFLWnVmdEdOOUZqMDNYS0E=';
@@ -32,6 +32,10 @@ export async function analyzeWildlifeImage(
     import.meta.env.VITE_GEMINI_API_KEY ||
     getBuiltInKey();
 
+  if (!activeKey) {
+    throw new Error('Please enter a valid Google Gemini API key from Google AI Studio (aistudio.google.com/app/apikey).');
+  }
+
   // Strip prefix if present (e.g. data:image/jpeg;base64,)
   const cleanedBase64 = base64Image.includes('base64,')
     ? base64Image.split('base64,')[1]
@@ -40,7 +44,11 @@ export async function analyzeWildlifeImage(
   const mimeType = base64Image.includes('data:image/png') ? 'image/png' : 'image/jpeg';
 
   const systemPrompt = `You are an expert Wildlife Rehabilitator and Taxonomist for Umpqua Wildlife Rescue in Douglas County, Oregon.
-Analyze the uploaded photo of wildlife and provide a strict JSON response with key diagnostic details.
+Analyze the uploaded photo of wildlife accurately and provide a strict JSON response with key diagnostic details.
+
+Be extremely precise:
+- Carefully distinguish adult birds (bright adult plumage, yellow beak, dark cap) from fledglings/nestlings (speckled breast, short tail, yellow gape flanges).
+- Identify species accurately (e.g. Adult American Robin, Red-tailed Hawk, Great Blue Heron, Fawn, Raccoon, Opossum, etc.).
 
 Return ONLY a valid JSON object matching this exact TypeScript structure:
 {
@@ -54,82 +62,60 @@ Return ONLY a valid JSON object matching this exact TypeScript structure:
   "confidenceScore": 0.95,
   "visualObservations": ["observation 1", "observation 2"],
   "recommendedAction": "Action advice for hotline dispatcher"
-}
+}`;
 
-Note Oregon State Non-Native / Prohibited species: Opossum, Nutria, Fox Squirrel, Starling, House Sparrow, Eurasian Collared Dove, Adult Raccoon, Coyote, Cougar, Marine Mammal/Seal.`;
+  // Try gemini-1.5-flash endpoint
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`;
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${activeKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': activeKey
-        },
-        body: JSON.stringify({
-          contents: [
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            { text: systemPrompt },
             {
-              parts: [
-                { text: systemPrompt },
-                {
-                  inline_data: {
-                    mime_type: mimeType,
-                    data: cleanedBase64
-                  }
-                }
-              ]
+              inline_data: {
+                mime_type: mimeType,
+                data: cleanedBase64
+              }
             }
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            response_mime_type: 'application/json'
-          }
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.warn('Gemini API Response Notice:', response.status, errText);
-      throw new Error(`API_RESPONSE_FALLBACK:${errText}`);
-    }
-
-    const data = await response.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-    const parsed = JSON.parse(rawText);
-
-    return {
-      speciesName: parsed.speciesName || 'Unknown Wildlife Species',
-      scientificName: parsed.scientificName || '',
-      category: parsed.category || 'Passerine',
-      isNative: parsed.isNative ?? true,
-      isProhibited: parsed.isProhibited ?? false,
-      ageStage: parsed.ageStage || 'Unknown',
-      physicalCondition: parsed.physicalCondition || 'Injured / Sick / Bleeding',
-      confidenceScore: parsed.confidenceScore || 0.9,
-      visualObservations: parsed.visualObservations || ['Visual analysis completed.'],
-      recommendedAction: parsed.recommendedAction || 'Consult UWR Rehabber roster based on species category.',
-      rawAnalysisText: rawText
-    };
-  } catch (err: any) {
-    // Return a seamless diagnostic result so dispatchers never experience broken calls
-    return {
-      speciesName: 'American Robin (Juvenile Fledgling)',
-      scientificName: 'Turdus migratorius',
-      category: 'Passerine',
-      isNative: true,
-      isProhibited: false,
-      ageStage: 'Feathered Fledgling',
-      physicalCondition: 'Feathered Fledgling',
-      confidenceScore: 0.95,
-      visualObservations: [
-        'Speckled breast plumage & pin feathers characteristic of juvenile songbird.',
-        'Short tail feathers indicate recent fledgling learning ground navigation.',
-        'No visible wing fracture or active bleeding detected.'
+          ]
+        }
       ],
-      recommendedAction: 'Fledgling Protocol: Parent birds continue ground feeding. LEAVE ALONE unless cats present.',
-      rawAnalysisText: 'Seamless Diagnostic Analysis'
-    };
+      generationConfig: {
+        temperature: 0.1,
+        response_mime_type: 'application/json'
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    if (response.status === 403) {
+      throw new Error('GCP_API_DISABLED: The Gemini API service is currently disabled on this GCP project (Project 603085179503). Enable it at: https://console.developers.google.com/apis/api/generativelanguage.googleapis.com/overview?project=603085179503 or paste a free key from Google AI Studio (aistudio.google.com/app/apikey).');
+    }
+    throw new Error(`Gemini API Error (${response.status}): ${errText}`);
   }
+
+  const data = await response.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+  const parsed = JSON.parse(rawText);
+
+  return {
+    speciesName: parsed.speciesName || 'Unknown Wildlife Species',
+    scientificName: parsed.scientificName || '',
+    category: parsed.category || 'Passerine',
+    isNative: parsed.isNative ?? true,
+    isProhibited: parsed.isProhibited ?? false,
+    ageStage: parsed.ageStage || 'Adult / Older',
+    physicalCondition: parsed.physicalCondition || 'Injured / Sick / Bleeding',
+    confidenceScore: parsed.confidenceScore || 0.9,
+    visualObservations: parsed.visualObservations || ['Visual analysis completed.'],
+    recommendedAction: parsed.recommendedAction || 'Consult UWR Rehabber roster based on species category.',
+    rawAnalysisText: rawText
+  };
 }
