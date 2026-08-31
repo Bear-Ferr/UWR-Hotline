@@ -12,13 +12,19 @@ export interface AIVisionDiagnosis {
   rawAnalysisText: string;
 }
 
-const DEFAULT_GEMINI_KEY = 'AIzaSyDVDrRvfPYc29tXhSvs_NoGsDTyCuFhbtc';
-
 export async function analyzeWildlifeImage(
   base64Image: string,
   customApiKey?: string
 ): Promise<AIVisionDiagnosis> {
-  const activeKey = customApiKey || localStorage.getItem('uwr_gemini_api_key') || DEFAULT_GEMINI_KEY;
+  const activeKey =
+    customApiKey ||
+    localStorage.getItem('uwr_gemini_api_key') ||
+    import.meta.env.VITE_GEMINI_API_KEY ||
+    '';
+
+  if (!activeKey) {
+    throw new Error('MISSING_API_KEY');
+  }
 
   // Strip prefix if present (e.g. data:image/jpeg;base64,)
   const cleanedBase64 = base64Image.includes('base64,')
@@ -48,7 +54,7 @@ Note Oregon State Non-Native / Prohibited species: Opossum, Nutria, Fox Squirrel
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -76,6 +82,9 @@ Note Oregon State Non-Native / Prohibited species: Opossum, Nutria, Fox Squirrel
 
     if (!response.ok) {
       const errText = await response.text();
+      if (errText.includes('leaked')) {
+        throw new Error('API Key Disabled: Google reported this API key as leaked because it was posted in public code. Please generate a new API key in Google AI Studio and paste it in the key settings box.');
+      }
       throw new Error(`Gemini API Error (${response.status}): ${errText}`);
     }
 
@@ -97,6 +106,6 @@ Note Oregon State Non-Native / Prohibited species: Opossum, Nutria, Fox Squirrel
       rawAnalysisText: rawText
     };
   } catch (err: any) {
-    throw new Error(`AI Analysis failed: ${err.message || err}`);
+    throw new Error(err.message || String(err));
   }
 }
