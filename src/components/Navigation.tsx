@@ -24,9 +24,11 @@ export const Navigation: React.FC<NavigationProps> = ({
       {/* Top Banner */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-          <div className="bg-amber-500 text-emerald-950 p-1.5 sm:p-2 rounded-lg font-bold flex items-center justify-center shadow shrink-0">
-            <PhoneCall className="w-5 h-5 sm:w-6 sm:h-6" />
-          </div>
+          <img
+            src="/uwr-logo.jpg"
+            alt="Umpqua Wildlife Rescue Logo"
+            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 border-amber-400 shadow object-cover shrink-0"
+          />
           <div className="min-w-0">
             <h1 className="text-base sm:text-xl font-bold tracking-tight text-white flex items-center gap-1.5 truncate">
               <span className="truncate">Umpqua Wildlife Rescue</span>
