@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Upload, Sparkles, CheckCircle2, X, RefreshCw, ArrowRight, ShieldAlert, FileSearch } from 'lucide-react';
+import { Camera, Upload, Sparkles, CheckCircle2, X, RefreshCw, ArrowRight, ShieldAlert, FileSearch, AlertTriangle } from 'lucide-react';
 import { analyzeWildlifeImage } from '../services/aiVisionService';
 import type { AIVisionDiagnosis } from '../services/aiVisionService';
 
@@ -23,11 +23,13 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [diagnosis, setDiagnosis] = useState<AIVisionDiagnosis | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleImageUpload = (file: File) => {
     setDiagnosis(null);
+    setErrorMsg(null);
     const reader = new FileReader();
     reader.onload = (e) => {
       if (e.target?.result) {
@@ -40,12 +42,13 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
   const handleAnalyze = async () => {
     if (!selectedImage) return;
     setIsAnalyzing(true);
+    setErrorMsg(null);
 
     try {
       const result = await analyzeWildlifeImage(selectedImage);
       setDiagnosis(result);
-    } catch {
-      // Handled internally in service with zero user friction
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Unable to process image. Please try again or re-upload photo.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -76,7 +79,7 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
               <h2 className="font-bold text-base sm:text-lg flex items-center gap-2">
                 AI Visual Wildlife Identifier
                 <span className="text-[10px] bg-emerald-800 text-amber-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-700">
-                  Built-In
+                  Built-In AI
                 </span>
               </h2>
               <p className="text-xs text-emerald-200">
@@ -147,6 +150,7 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
                   onClick={() => {
                     setSelectedImage(null);
                     setDiagnosis(null);
+                    setErrorMsg(null);
                   }}
                   className="absolute top-2 right-2 bg-black/70 hover:bg-black text-white p-1.5 rounded-full shadow transition"
                 >
@@ -176,6 +180,14 @@ export const AIPhotoIdentifier: React.FC<AIPhotoIdentifierProps> = ({
               <div className="text-xs text-emerald-800">
                 Evaluating plumage/fur texture, color distribution, species taxonomy, and age indicators...
               </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {errorMsg && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl text-red-950 text-xs font-semibold flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+              <div>{errorMsg}</div>
             </div>
           )}
 
