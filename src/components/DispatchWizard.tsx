@@ -474,7 +474,10 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
                         <span className="font-bold text-gray-900 text-sm">{rehabber.name}</span>
-                        <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-medium">
+                        <span
+                          title={rehabber.role.includes('Sub') ? 'Sub-Permittee: Operates legally under a primary licensed rehabilitator permit' : 'Licensed Primary Rehabilitator'}
+                          className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-medium cursor-help border border-emerald-300"
+                        >
                           {rehabber.role}
                         </span>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isOpenNow ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'}`}>

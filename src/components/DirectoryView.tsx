@@ -117,12 +117,15 @@ export const DirectoryView: React.FC = () => {
             {filteredRehabbers.map(r => (
               <div key={r.id} className="p-4 hover:bg-emerald-50/50 transition flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1.5">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-gray-900 text-base">{r.name}</span>
-                    <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded">
-                      {r.role}
+                    <span className="flex items-center space-x-2">
+                      <span className="font-bold text-gray-900 text-base">{r.name}</span>
+                      <span
+                        title={r.role.includes('Sub') ? 'Sub-Permittee: Operates legally under a primary licensed rehabilitator permit' : 'Licensed Primary Rehabilitator'}
+                        className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded cursor-help border border-emerald-300"
+                      >
+                        {r.role}
+                      </span>
                     </span>
-                  </div>
 
                   <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                     <span className="flex items-center gap-1 font-semibold text-emerald-900">
