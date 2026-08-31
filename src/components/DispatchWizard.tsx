@@ -128,7 +128,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                 <User className="w-4 h-4 text-emerald-700" />
                 Caller Information & Location
               </h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Caller Name</label>
                   <input
@@ -136,7 +136,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                     placeholder="e.g. Jane Smith"
                     value={callerName}
                     onChange={e => setCallerName(e.target.value)}
-                    className="w-full px-3 py-1.5 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -146,7 +146,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                     placeholder="541-555-0123"
                     value={callerPhone}
                     onChange={e => setCallerPhone(e.target.value)}
-                    className="w-full px-3 py-1.5 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -204,13 +204,13 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                 Animal & Species Details
               </h3>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Taxonomic Group</label>
                   <select
                     value={category}
                     onChange={e => setCategory(e.target.value)}
-                    className="w-full px-3 py-1.5 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium text-emerald-900"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium text-emerald-900 text-sm"
                   >
                     <option value="Passerine">Passerines (Songbirds/Crows)</option>
                     <option value="Raptors">Raptors (Hawks/Owls/Eagles)</option>
@@ -229,7 +229,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                   <select
                     value={ageStage}
                     onChange={e => setAgeStage(e.target.value as RoutingInput['ageStage'])}
-                    className="w-full px-3 py-1.5 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white text-sm"
                   >
                     <option value="Unknown">Unknown / Adult</option>
                     <option value="Naked Baby / Nestling">Naked Baby / Nestling</option>
@@ -276,7 +276,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                 Special Circumstances / Special Species
               </h3>
 
-              <div className="grid grid-cols-2 gap-2 text-xs font-medium text-gray-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-medium text-gray-800">
                 <label className="flex items-center space-x-2 bg-white p-2 rounded border hover:bg-gray-100 cursor-pointer">
                   <input
                     type="checkbox"
@@ -541,8 +541,8 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
         </div>
 
         {/* DISPATCH ACTION BAR: SMS COPY, PRINT TICKET, SAVE REPORT */}
-        <div className="bg-white p-4 rounded-xl shadow-md border border-emerald-200 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="bg-white p-4 rounded-xl shadow-md border border-emerald-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <button
               onClick={() => {
                 const topRehabber = recommendation.recommendedRehabbers[0]?.rehabber;
@@ -550,7 +550,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                 navigator.clipboard.writeText(smsText);
                 alert('📱 SMS Dispatch Script copied to clipboard! You can now paste and text this directly to rehabbers or transport volunteers.');
               }}
-              className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3.5 py-2 rounded-lg text-xs flex items-center space-x-1.5 shadow transition"
+              className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3.5 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow transition"
             >
               <span>📱 Copy SMS Dispatch Text</span>
             </button>
@@ -559,29 +559,31 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
               onClick={() => {
                 window.print();
               }}
-              className="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3.5 py-2 rounded-lg text-xs flex items-center space-x-1.5 shadow transition"
+              className="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3.5 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow transition"
             >
               <span>🖨️ Print Intake Ticket</span>
             </button>
           </div>
 
-          <div className="flex items-center space-x-3">
-            <label className="text-xs font-bold text-gray-700">Outcome:</label>
-            <select
-              value={selectedOutcomeStatus}
-              onChange={e => setSelectedOutcomeStatus(e.target.value as RescueReport['outcomeStatus'])}
-              className="text-xs font-semibold px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white"
-            >
-              <option value="Referred to Rehabber">Referred to Rehabber</option>
-              <option value="Referred to Carrier">Referred to Carrier</option>
-              <option value="Referred to ODFW/Police">Referred to ODFW/Police</option>
-              <option value="Resolved - Left in Place">Resolved - Left in Place</option>
-              <option value="Pending">Pending Callback</option>
-            </select>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex items-center space-x-2">
+              <label className="text-xs font-bold text-gray-700 shrink-0">Outcome:</label>
+              <select
+                value={selectedOutcomeStatus}
+                onChange={e => setSelectedOutcomeStatus(e.target.value as RescueReport['outcomeStatus'])}
+                className="w-full text-xs font-semibold px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white"
+              >
+                <option value="Referred to Rehabber">Referred to Rehabber</option>
+                <option value="Referred to Carrier">Referred to Carrier</option>
+                <option value="Referred to ODFW/Police">Referred to ODFW/Police</option>
+                <option value="Resolved - Left in Place">Resolved - Left in Place</option>
+                <option value="Pending">Pending Callback</option>
+              </select>
+            </div>
 
             <button
               onClick={handleSaveReport}
-              className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-4 py-2 rounded-lg text-xs flex items-center space-x-1.5 shadow-md transition"
+              className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-4 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow-md transition shrink-0"
             >
               <Save className="w-4 h-4" />
               <span>Save Report</span>
