@@ -47,7 +47,7 @@ export async function analyzeWildlifeImage(
 Analyze the uploaded photo of wildlife accurately and provide a strict JSON response with key diagnostic details.
 
 Be extremely precise:
-- Carefully distinguish adult birds (bright adult plumage, yellow beak, dark cap) from fledglings/nestlings (speckled breast, short tail, yellow gape flanges).
+- Carefully distinguish adult birds (bright solid adult plumage, dark head/cap, full length adult tail, yellow beak) from fledglings/nestlings (speckled breast, short tail, yellow gape flanges).
 - Identify species accurately (e.g. Adult American Robin, Red-tailed Hawk, Great Blue Heron, Fawn, Raccoon, Opossum, etc.).
 
 Return ONLY a valid JSON object matching this exact TypeScript structure:
@@ -64,13 +64,14 @@ Return ONLY a valid JSON object matching this exact TypeScript structure:
   "recommendedAction": "Action advice for hotline dispatcher"
 }`;
 
-  // Try gemini-1.5-flash endpoint
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`;
+  // Use gemini-3.6-flash which supports vision & text with 200 OK status
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${activeKey}`;
 
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'x-goog-api-key': activeKey
     },
     body: JSON.stringify({
       contents: [
