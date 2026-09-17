@@ -83,10 +83,28 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
     addOfficialReferral('saving-grace');
   }
 
-  // 3. Check Fledgling / Baby Bird Flag
+  // 3. Check Category Specific Critical Alerts (Fledgling, Vulture, Pigeon/Dove, Bat)
   if (input.category === 'Passerine' && (input.ageStage === 'Feathered Fledgling' || input.physicalCondition === 'Feathered Fledgling')) {
     criticalAlerts.push(
       'FLEDGLING PROTOCOL: If baby bird is feathered and hopping on ground, it is learning to fly. Parents feed it on ground. LEAVE ALONE unless outdoor cats are present or tail is damaged.'
+    );
+  }
+
+  if (input.category === 'Vultures & Scavengers') {
+    criticalAlerts.push(
+      'TURKEY VULTURES / SCAVENGERS: Vultures possess powerful hooked beaks and projectile-vomit caustic stomach acid defensively when cornered! Rescuers MUST wear safety goggles/eye protection and thick gloves. Secure in dark ventilated carrier.'
+    );
+  }
+
+  if (input.category === 'Pigeons & Doves' || input.isBandedPigeon) {
+    criticalAlerts.push(
+      'PIGEONS & DOVES: Check legs carefully for aluminum or plastic owner bands. If banded, call Banded Pigeon Hotline (1-800-755-2778). Place in soft towel-lined box in a warm, dark, quiet room.'
+    );
+  }
+
+  if (input.category === 'Bats') {
+    criticalAlerts.push(
+      'BAT PROTOCOL: DO NOT HANDLE WITH BARE HANDS! Rabies vector species caution. Use thick gloves or scoop with box/cup without direct hand contact. Barbara Whittaker (360-451-9414) is UWR Bat Specialist.'
     );
   }
 

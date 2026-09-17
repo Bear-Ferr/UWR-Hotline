@@ -185,6 +185,16 @@ export const storageService = {
     localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
   },
 
+  updateReport(updatedReport: RescueReport): void {
+    const reports = this.getReports().map(r => r.id === updatedReport.id ? updatedReport : r);
+    localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+  },
+
+  deleteReport(reportId: string): void {
+    const reports = this.getReports().filter(r => r.id !== reportId);
+    localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+  },
+
   getUserReports(userId: string): RescueReport[] {
     return this.getReports().filter(r => r.userId === userId);
   }

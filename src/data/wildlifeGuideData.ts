@@ -216,6 +216,90 @@ export const WILDLIFE_SPECIES_CATALOG: WildlifeSpecies[] = [
     dispatchCategory: 'Raptors'
   },
 
+  // --- VULTURES & SCAVENGERS ---
+  {
+    id: 'turkey-vulture',
+    commonName: 'Turkey Vulture',
+    scientificName: 'Cathartes aura',
+    category: 'Vultures & Scavengers',
+    appearance: {
+      size: 'Large (25-32 inches, wingspan 5.5 - 6ft)',
+      colors: ['Dark brown/black body', 'Red unfeathered head (adults)', 'Silver-grey underwing flight feathers'],
+      keyFeatures: ['Bare red unfeathered head', 'V-shaped ("dihedral") flight profile while soaring', 'Teetering flight style'],
+      beakOrMouth: 'Strong ivory-white hooked beak'
+    },
+    habitat: 'Open country, roadsides, agricultural fields, thermal updrafts around Roseburg & I-5',
+    commonInUmpqua: true,
+    imageUrl: 'https://images.unsplash.com/photo-1590422749897-4825d30d1d64?auto=format&fit=crop&w=800&q=80',
+    description: 'Essential ecological scavenger in the Umpqua watershed. Uses keen sense of smell to locate carrion.',
+    babyVsAdultNotes: 'Juveniles have dark grey/black heads before turning bright red as adults.',
+    specialHandlingNotes: 'DEFENSE MECHANISM WARNING: Vultures projectile-vomit caustic stomach acid defensively when cornered! Wear eye protection/goggles & gloves. Route to Peggy Cheatham, Joe Reicherts, or Brenda Weber.',
+    dispatchCategory: 'Vultures & Scavengers'
+  },
+
+  // --- PIGEONS & DOVES (COLUMBIDS) ---
+  {
+    id: 'pigeon-dove',
+    commonName: 'Mourning Dove / Rock Pigeon / Banded Pigeon',
+    scientificName: 'Zenaida macroura / Columba livia',
+    category: 'Pigeons & Doves',
+    appearance: {
+      size: 'Small to Medium (9-13 inches)',
+      colors: ['Buff tan/grey with black spots (Mourning Dove)', 'Variable grey/iridescent neck (Pigeon)'],
+      keyFeatures: ['Plump body with small rounded head', 'Soft cooing vocalization', 'Fast direct wingbeat flight'],
+      beakOrMouth: 'Slender grey bill with fleshy cere at base'
+    },
+    habitat: 'Agricultural fields, bird feeders, suburban yards, city buildings across Douglas County',
+    commonInUmpqua: true,
+    imageUrl: 'https://images.unsplash.com/photo-1549608276-5786777e6587?auto=format&fit=crop&w=800&q=80',
+    description: 'Columbid species common throughout Douglas County. Check for leg bands on domestic/racing pigeons.',
+    babyVsAdultNotes: 'Squabs (babies) are fed crop "pigeon milk" by parents and have bulbous fleshy beaks.',
+    specialHandlingNotes: 'If leg band is present, report to Banded Pigeon Center (1-800-755-2778). Place in soft-lined dark box. Route to Brenda Weber, Barbara Whittaker, or Rachael Daniels.',
+    dispatchCategory: 'Pigeons & Doves'
+  },
+
+  // --- WOODPECKERS & CAVITY NESTERS ---
+  {
+    id: 'northern-flicker',
+    commonName: 'Northern Flicker / Woodpecker',
+    scientificName: 'Colaptes auratus',
+    category: 'Woodpeckers',
+    appearance: {
+      size: 'Medium (11-12 inches)',
+      colors: ['Brown patterned back', 'Salmon-red underwings (Western shafted)', 'Black chest crescent'],
+      keyFeatures: ['Red mustache malar stripe on males', 'Bright salmon flight feathers in flight', 'White rump patch'],
+      beakOrMouth: 'Strong chisel-like slightly curved beak'
+    },
+    habitat: 'Deciduous woods, suburban yards, telephone poles around Roseburg & Glide',
+    commonInUmpqua: true,
+    imageUrl: 'https://images.unsplash.com/photo-1628178120612-421f1d1f0579?auto=format&fit=crop&w=800&q=80',
+    description: 'Common ant-eating woodpecker in Douglas County. Forages frequently on lawns and dead snags.',
+    babyVsAdultNotes: 'Nestlings in tree cavities make buzzy bee-hive like sounds when hungry.',
+    specialHandlingNotes: 'Sharp claws and strong chisel beak. Keep in dark cloth-lined box. Route to Brenda Weber or Joe Reicherts.',
+    dispatchCategory: 'Woodpeckers'
+  },
+
+  // --- BATS & SMALL INSECTIVORES ---
+  {
+    id: 'little-brown-bat',
+    commonName: 'Little Brown Bat / Native Bat',
+    scientificName: 'Myotis lucifugus',
+    category: 'Bats',
+    appearance: {
+      size: 'Tiny (3-4 inches body, 9-11 inch wingspan)',
+      colors: ['Glossy dark brown to cinnamon fur', 'Black wing membranes'],
+      keyFeatures: ['Leathery wing membranes between fingers', 'Large ears for echolocation', 'Tiny clawed feet'],
+      beakOrMouth: 'Small mouth with sharp needle-like insectivorous teeth'
+    },
+    habitat: 'Attics, barns, bridges, tree bark near water bodies in Douglas County',
+    commonInUmpqua: true,
+    imageUrl: 'https://images.unsplash.com/photo-1504006833117-8886a355efbf?auto=format&fit=crop&w=800&q=80',
+    description: 'Beneficial nocturnal insectivore consuming thousands of mosquitoes per night.',
+    babyVsAdultNotes: 'Pups cling to mother during early summer.',
+    specialHandlingNotes: 'RABIES CAUTION: NEVER TOUCH WITH BARE HANDS! Use thick gloves or scoop with cup/box. Barbara Whittaker is UWR Bat Specialist (360-451-9414).',
+    dispatchCategory: 'Bats'
+  },
+
   // --- WATERBIRDS & PRECOCIALS ---
   {
     id: 'great-blue-heron',

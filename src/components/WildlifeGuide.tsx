@@ -11,7 +11,7 @@ export const WildlifeGuide: React.FC<WildlifeGuideProps> = ({ onSelectSpeciesFor
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
-  const categories = ['All', 'Passerine', 'Raptor', 'Heron', 'Precocial', 'Fawns/Bears', 'Mammal (Prohibited)'];
+  const categories = ['All', 'Passerine', 'Pigeons & Doves', 'Vultures & Scavengers', 'Raptor', 'Woodpeckers', 'Heron', 'Precocial', 'Bats', 'Fawns/Bears', 'Mammal (Prohibited)'];
 
   const filteredSpecies = WILDLIFE_SPECIES_CATALOG.filter(species => {
     const matchesCategory = selectedCategory === 'All' || species.category.toLowerCase().includes(selectedCategory.toLowerCase());

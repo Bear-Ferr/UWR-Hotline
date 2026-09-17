@@ -214,15 +214,20 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                     onChange={e => setCategory(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium text-emerald-900 text-sm"
                   >
-                    <option value="Passerine">Passerines (Songbirds/Crows)</option>
-                    <option value="Raptors">Raptors (Hawks/Owls/Eagles)</option>
-                    <option value="Herons">Herons & Egrets</option>
-                    <option value="Precocials">Precocials (Quail/Ducklings)</option>
-                    <option value="Seabirds">Seabirds</option>
-                    <option value="Mammals">Mammals (Small/Large)</option>
-                    <option value="Fawns/Bears">Fawns & Bear Cubs</option>
-                    <option value="Raccoons">Raccoons (Restricted)</option>
-                    <option value="Herptiles">Herptiles (Turtles/Snakes)</option>
+                    <option value="Passerine">Passerines & Small Songbirds (Robins/Finches/Sparrows)</option>
+                    <option value="Pigeons & Doves">Pigeons & Doves (Mourning Dove/Rock Pigeon/Band-Tailed)</option>
+                    <option value="Vultures & Scavengers">Vultures & Scavengers (Turkey Vulture)</option>
+                    <option value="Corvids">Corvids (Crows, Ravens, Steller's Jays)</option>
+                    <option value="Raptors">Raptors (Hawks, Owls, Falcons, Eagles)</option>
+                    <option value="Woodpeckers">Woodpeckers & Flickers</option>
+                    <option value="Herons">Herons, Egrets & Wading Birds</option>
+                    <option value="Precocials">Precocials (Waterfowl, Quail, Pheasant)</option>
+                    <option value="Seabirds">Seabirds & Shorebirds (Gulls, Pelicans)</option>
+                    <option value="Mammals">Mammals (Squirrels, Opossums, Rabbits)</option>
+                    <option value="Bats">Bats & Insectivores</option>
+                    <option value="Fawns/Bears">Fawns, Deer & Bear Cubs</option>
+                    <option value="Raccoons">Raccoons & RVS (Restricted)</option>
+                    <option value="Herptiles">Herptiles (Turtles, Lizards, Snakes, Frogs)</option>
                   </select>
                 </div>
 
