@@ -8,17 +8,17 @@ interface RescueHistoryProps {
 }
 
 export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => {
-  const [reports, setReports] = useState<RescueReport[]>(() => storageService.getUserReports(currentUser.id));
+  const [reports, setReports] = useState<RescueReport[]>(() => storageService.getReports());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOutcomeFilter, setSelectedOutcomeStatusFilter] = useState<string>('All');
 
-  // Real-Time Multi-Device Firebase Subscription
+  // Real-Time Multi-Device Firebase Subscription (Loads all team reports)
   useEffect(() => {
     const unsubscribe = storageService.subscribeToReports(allReports => {
-      setReports(allReports.filter(r => r.userId === currentUser.id));
+      setReports(allReports);
     });
     return () => unsubscribe();
-  }, [currentUser.id]);
+  }, []);
 
   // Edit Modal State
   const [editingReport, setEditingReport] = useState<RescueReport | null>(null);
@@ -28,7 +28,7 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
 
   const handleStatusChange = (reportId: string, newStatus: RescueReport['outcomeStatus']) => {
     storageService.updateReportStatus(reportId, newStatus);
-    setReports(storageService.getUserReports(currentUser.id));
+    setReports(storageService.getReports());
   };
 
   const handleOpenEdit = (report: RescueReport) => {
@@ -39,7 +39,7 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
     e.preventDefault();
     if (!editingReport) return;
     storageService.updateReport(editingReport);
-    setReports(storageService.getUserReports(currentUser.id));
+    setReports(storageService.getReports());
     setEditingReport(null);
   };
 
@@ -50,7 +50,7 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
   const handleConfirmDelete = () => {
     if (!deletingReport) return;
     storageService.deleteReport(deletingReport.id);
-    setReports(storageService.getUserReports(currentUser.id));
+    setReports(storageService.getReports());
     setDeletingReport(null);
   };
 
