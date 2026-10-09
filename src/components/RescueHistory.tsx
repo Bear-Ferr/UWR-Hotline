@@ -123,7 +123,20 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
         </div>
 
         {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => {
+              const restored = storageService.restoreBackup();
+              setReports(restored);
+              alert('Restored local call history logs and synced to Cloud Firestore!');
+            }}
+            className="bg-emerald-800 hover:bg-emerald-700 text-emerald-100 font-bold px-3 py-2 rounded-lg text-xs flex items-center space-x-1 border border-emerald-700 transition"
+            title="Restore previous call reports and push to Cloud DB"
+          >
+            <Clock className="w-3.5 h-3.5 text-amber-400" />
+            <span>Restore / Seed Local History</span>
+          </button>
+
           <button
             onClick={handleExportCSV}
             className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-4 py-2 rounded-lg text-xs flex items-center space-x-1.5 shadow transition"
