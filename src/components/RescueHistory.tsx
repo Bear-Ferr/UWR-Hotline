@@ -450,20 +450,11 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
                     onChange={e => setEditingReport({ ...editingReport, speciesCategory: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg text-xs bg-white font-medium"
                   >
-                    <option value="Passerine">Passerines & Small Songbirds</option>
-                    <option value="Pigeons & Doves">Pigeons & Doves (Columbids)</option>
-                    <option value="Vultures & Scavengers">Vultures & Scavengers (Turkey Vulture)</option>
-                    <option value="Corvids">Corvids (Crows, Ravens, Jays)</option>
-                    <option value="Raptors">Raptors (Hawks, Owls, Falcons, Eagles)</option>
-                    <option value="Woodpeckers">Woodpeckers & Flickers</option>
-                    <option value="Herons">Herons & Wading Birds</option>
-                    <option value="Precocials">Precocials (Waterfowl, Quail, Pheasant)</option>
-                    <option value="Seabirds">Seabirds & Shorebirds</option>
-                    <option value="Mammals">Mammals (Squirrels, Opossums, Rabbits)</option>
-                    <option value="Bats">Bats & Insectivores</option>
-                    <option value="Fawns/Bears">Fawns, Deer & Bears</option>
-                    <option value="Raccoons">Raccoons (Restricted)</option>
-                    <option value="Herptiles">Herptiles (Turtles, Lizards, Snakes)</option>
+                    {SPECIES_TAXONOMIC_GROUPS.map(grp => (
+                      <option key={grp} value={grp.split(' (')[0]}>
+                        {grp}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -471,10 +462,11 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
                   <label className="block text-xs font-bold text-gray-700 mb-1">Specific Common Name</label>
                   <input
                     type="text"
+                    list="history-species-list"
                     value={editingReport.specificSpecies || ''}
                     onChange={e => setEditingReport({ ...editingReport, specificSpecies: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg text-xs"
-                    placeholder="e.g. Turkey Vulture, Mourning Dove"
+                    placeholder="e.g. Turkey Vulture, Banded Pigeon, Robin, Bobcat"
                   />
                 </div>
 
