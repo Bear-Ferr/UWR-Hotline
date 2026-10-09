@@ -211,37 +211,21 @@ export const storageService = {
   getReports(): RescueReport[] {
     const raw = localStorage.getItem(REPORTS_KEY);
     if (!raw) {
-      localStorage.setItem(REPORTS_KEY, JSON.stringify(SAMPLE_REPORTS));
-      localStorage.setItem(REPORTS_BACKUP_KEY, JSON.stringify(SAMPLE_REPORTS));
-      return SAMPLE_REPORTS;
+      return [];
     }
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        localStorage.setItem(REPORTS_BACKUP_KEY, JSON.stringify(parsed));
+      if (Array.isArray(parsed)) {
         return parsed;
       }
-      
-      const backupRaw = localStorage.getItem(REPORTS_BACKUP_KEY);
-      if (backupRaw) {
-        const backupParsed = JSON.parse(backupRaw);
-        if (Array.isArray(backupParsed) && backupParsed.length > 0) {
-          localStorage.setItem(REPORTS_KEY, JSON.stringify(backupParsed));
-          return backupParsed;
-        }
-      }
-
-      localStorage.setItem(REPORTS_KEY, JSON.stringify(SAMPLE_REPORTS));
-      localStorage.setItem(REPORTS_BACKUP_KEY, JSON.stringify(SAMPLE_REPORTS));
-      return SAMPLE_REPORTS;
+      return [];
     } catch {
-      return SAMPLE_REPORTS;
+      return [];
     }
   },
 
   scanBrowserStorageForLostReports(): RescueReport[] {
     const map = new Map<string, RescueReport>();
-    SAMPLE_REPORTS.forEach(s => map.set(s.id, s));
 
     try {
       for (let i = 0; i < localStorage.length; i++) {
@@ -280,17 +264,6 @@ export const storageService = {
         snapshot.forEach(docSnap => {
           cloudReports.push(docSnap.data() as RescueReport);
         });
-
-        const currentLocal = this.getReports();
-
-        if (cloudReports.length === 0 && currentLocal.length > 0) {
-          console.info('Migrating local reports to Cloud Firestore...');
-          currentLocal.forEach(r => {
-            setDoc(doc(db, 'uwr_rescue_reports', r.id), r).catch(console.error);
-          });
-          callback(currentLocal);
-          return;
-        }
 
         cloudReports.sort((a, b) => new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime());
 
