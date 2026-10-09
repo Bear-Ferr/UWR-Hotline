@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
 import type { RescueReport, UserAccount } from '../services/storageService';
+import { SPECIES_TAXONOMIC_GROUPS, COMMON_SPECIES_SUGGESTIONS } from '../data/uwrData';
 import { Clock, Search, MapPin, FileText, Download, CheckCircle, ArrowUpRight, ShieldAlert, BarChart3, Edit3, Trash2, X, Save, AlertTriangle } from 'lucide-react';
 
 interface RescueHistoryProps {
@@ -665,20 +666,11 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
                     onChange={e => setNewReport({ ...newReport, speciesCategory: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg text-xs bg-white font-medium"
                   >
-                    <option value="Vultures & Scavengers">Vultures & Scavengers (Turkey Vulture)</option>
-                    <option value="Pigeons & Doves">Pigeons & Doves (Columbids)</option>
-                    <option value="Passerine">Passerines & Small Songbirds</option>
-                    <option value="Corvids">Corvids (Crows, Ravens, Jays)</option>
-                    <option value="Raptors">Raptors (Hawks, Owls, Falcons)</option>
-                    <option value="Woodpeckers">Woodpeckers & Flickers</option>
-                    <option value="Herons">Herons & Wading Birds</option>
-                    <option value="Precocials">Precocials (Waterfowl, Quail)</option>
-                    <option value="Seabirds">Seabirds & Shorebirds</option>
-                    <option value="Mammals">Mammals (Squirrels, Opossums)</option>
-                    <option value="Bats">Bats & Insectivores</option>
-                    <option value="Fawns/Bears">Fawns, Deer & Bears</option>
-                    <option value="Raccoons">Raccoons (Restricted)</option>
-                    <option value="Herptiles">Herptiles (Turtles, Snakes)</option>
+                    {SPECIES_TAXONOMIC_GROUPS.map(grp => (
+                      <option key={grp} value={grp.split(' (')[0]}>
+                        {grp}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -686,11 +678,17 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
                   <label className="block text-xs font-bold text-gray-700 mb-1">Specific Common Name</label>
                   <input
                     type="text"
+                    list="history-species-list"
                     value={newReport.specificSpecies}
                     onChange={e => setNewReport({ ...newReport, specificSpecies: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg text-xs"
-                    placeholder="e.g. Turkey Vulture, Mourning Dove"
+                    placeholder="e.g. Turkey Vulture, Banded Pigeon, Robin, Bobcat"
                   />
+                  <datalist id="history-species-list">
+                    {COMMON_SPECIES_SUGGESTIONS.map(spec => (
+                      <option key={spec} value={spec} />
+                    ))}
+                  </datalist>
                 </div>
 
                 <div>

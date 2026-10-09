@@ -3,7 +3,7 @@ import { evaluateDispatchRouting } from '../services/routingEngine';
 import type { RoutingInput, RoutingRecommendation } from '../services/routingEngine';
 import { storageService } from '../services/storageService';
 import type { RescueReport } from '../services/storageService';
-import { OREGON_COUNTIES } from '../data/uwrData';
+import { OREGON_COUNTIES, SPECIES_TAXONOMIC_GROUPS, COMMON_SPECIES_SUGGESTIONS } from '../data/uwrData';
 import { Phone, PhoneForwarded, AlertTriangle, ShieldAlert, CheckCircle, Info, Clock, MapPin, User, Save, RefreshCw, Navigation, Building, Sparkles } from 'lucide-react';
 
 interface DispatchWizardProps {
@@ -214,20 +214,11 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                     onChange={e => setCategory(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium text-emerald-900 text-sm"
                   >
-                    <option value="Passerine">Passerines & Small Songbirds (Robins/Finches/Sparrows)</option>
-                    <option value="Pigeons & Doves">Pigeons & Doves (Mourning Dove/Rock Pigeon/Band-Tailed)</option>
-                    <option value="Vultures & Scavengers">Vultures & Scavengers (Turkey Vulture)</option>
-                    <option value="Corvids">Corvids (Crows, Ravens, Steller's Jays)</option>
-                    <option value="Raptors">Raptors (Hawks, Owls, Falcons, Eagles)</option>
-                    <option value="Woodpeckers">Woodpeckers & Flickers</option>
-                    <option value="Herons">Herons, Egrets & Wading Birds</option>
-                    <option value="Precocials">Precocials (Waterfowl, Quail, Pheasant)</option>
-                    <option value="Seabirds">Seabirds & Shorebirds (Gulls, Pelicans)</option>
-                    <option value="Mammals">Mammals (Squirrels, Opossums, Rabbits)</option>
-                    <option value="Bats">Bats & Insectivores</option>
-                    <option value="Fawns/Bears">Fawns, Deer & Bear Cubs</option>
-                    <option value="Raccoons">Raccoons & RVS (Restricted)</option>
-                    <option value="Herptiles">Herptiles (Turtles, Lizards, Snakes, Frogs)</option>
+                    {SPECIES_TAXONOMIC_GROUPS.map(grp => (
+                      <option key={grp} value={grp.split(' (')[0]}>
+                        {grp}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -248,7 +239,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-medium text-gray-700">Specific Common Name (Optional)</label>
+                  <label className="block text-xs font-medium text-gray-700">Specific Common Name (Search or Type Any Animal)</label>
                   {onOpenAIPhotoID && (
                     <button
                       type="button"
@@ -262,11 +253,17 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                 </div>
                 <input
                   type="text"
-                  placeholder="e.g. Robin, Red-Tailed Hawk, Fawn, Squirrel"
+                  list="common-species-list"
+                  placeholder="e.g. Turkey Vulture, Banded Pigeon, American Robin, Barn Swallow, Bobcat"
                   value={specificSpecies}
                   onChange={e => setSpecificSpecies(e.target.value)}
                   className="w-full px-3 py-1.5 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm"
                 />
+                <datalist id="common-species-list">
+                  {COMMON_SPECIES_SUGGESTIONS.map(spec => (
+                    <option key={spec} value={spec} />
+                  ))}
+                </datalist>
               </div>
             </div>
 
