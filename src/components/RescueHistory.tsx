@@ -23,6 +23,42 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
   // Edit Modal State
   const [editingReport, setEditingReport] = useState<RescueReport | null>(null);
 
+  // Add Call Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newReport, setNewReport] = useState({
+    callerName: '',
+    callerPhone: '',
+    callerLocation: '',
+    speciesCategory: 'Vultures & Scavengers',
+    specificSpecies: '',
+    animalCondition: '',
+    isCatCaught: false,
+    isProhibited: false,
+    assignedRehabberName: '',
+    outcomeStatus: 'Referred to Rehabber' as RescueReport['outcomeStatus'],
+    notes: ''
+  });
+
+  const handleCreateNewReport = (e: React.FormEvent) => {
+    e.preventDefault();
+    storageService.addReport(newReport);
+    setReports(storageService.getReports());
+    setIsAddModalOpen(false);
+    setNewReport({
+      callerName: '',
+      callerPhone: '',
+      callerLocation: '',
+      speciesCategory: 'Vultures & Scavengers',
+      specificSpecies: '',
+      animalCondition: '',
+      isCatCaught: false,
+      isProhibited: false,
+      assignedRehabberName: '',
+      outcomeStatus: 'Referred to Rehabber',
+      notes: ''
+    });
+  };
+
   // Delete Confirmation State
   const [deletingReport, setDeletingReport] = useState<RescueReport | null>(null);
 
@@ -125,24 +161,32 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
           <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-3 py-2 rounded-lg text-xs flex items-center space-x-1 shadow transition"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>+ Add Call Record</span>
+          </button>
+
+          <button
             onClick={() => {
               const restored = storageService.restoreBackup();
               setReports(restored);
-              alert('Restored local call history logs and synced to Cloud Firestore!');
+              alert('Restored standard baseline call logs and synced to Cloud Firestore!');
             }}
             className="bg-emerald-800 hover:bg-emerald-700 text-emerald-100 font-bold px-3 py-2 rounded-lg text-xs flex items-center space-x-1 border border-emerald-700 transition"
-            title="Restore previous call reports and push to Cloud DB"
+            title="Seed baseline call reports into Cloud DB"
           >
             <Clock className="w-3.5 h-3.5 text-amber-400" />
-            <span>Restore / Seed Local History</span>
+            <span>Seed Baseline Catalog</span>
           </button>
 
           <button
             onClick={handleExportCSV}
-            className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-4 py-2 rounded-lg text-xs flex items-center space-x-1.5 shadow transition"
+            className="bg-emerald-800 hover:bg-emerald-700 text-emerald-100 font-bold px-3 py-2 rounded-lg text-xs flex items-center space-x-1 border border-emerald-700 transition"
           >
-            <Download className="w-4 h-4" />
-            <span>Export CSV (ODFW Permit Report)</span>
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
@@ -558,6 +602,185 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
                 <span>Delete Record</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* ADD NEW RECORD MODAL OVERLAY */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-gray-200 overflow-hidden animate-in zoom-in-95">
+            <div className="bg-emerald-900 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <FileText className="w-5 h-5 text-amber-400" />
+                <h3 className="font-bold text-lg">Log Call Record into Cloud Firestore</h3>
+              </div>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="text-emerald-200 hover:text-white p-1 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateNewReport} className="p-6 space-y-4 text-sm max-h-[80vh] overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Caller Name</label>
+                  <input
+                    type="text"
+                    value={newReport.callerName}
+                    onChange={e => setNewReport({ ...newReport, callerName: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-xs"
+                    placeholder="e.g. John Doe"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Caller Phone</label>
+                  <input
+                    type="text"
+                    value={newReport.callerPhone}
+                    onChange={e => setNewReport({ ...newReport, callerPhone: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-xs"
+                    placeholder="541-555-0199"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Location / City</label>
+                  <input
+                    type="text"
+                    value={newReport.callerLocation}
+                    onChange={e => setNewReport({ ...newReport, callerLocation: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-xs"
+                    placeholder="e.g. Roseburg, Glide, Winston"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Taxonomic Category</label>
+                  <select
+                    value={newReport.speciesCategory}
+                    onChange={e => setNewReport({ ...newReport, speciesCategory: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-xs bg-white font-medium"
+                  >
+                    <option value="Vultures & Scavengers">Vultures & Scavengers (Turkey Vulture)</option>
+                    <option value="Pigeons & Doves">Pigeons & Doves (Columbids)</option>
+                    <option value="Passerine">Passerines & Small Songbirds</option>
+                    <option value="Corvids">Corvids (Crows, Ravens, Jays)</option>
+                    <option value="Raptors">Raptors (Hawks, Owls, Falcons)</option>
+                    <option value="Woodpeckers">Woodpeckers & Flickers</option>
+                    <option value="Herons">Herons & Wading Birds</option>
+                    <option value="Precocials">Precocials (Waterfowl, Quail)</option>
+                    <option value="Seabirds">Seabirds & Shorebirds</option>
+                    <option value="Mammals">Mammals (Squirrels, Opossums)</option>
+                    <option value="Bats">Bats & Insectivores</option>
+                    <option value="Fawns/Bears">Fawns, Deer & Bears</option>
+                    <option value="Raccoons">Raccoons (Restricted)</option>
+                    <option value="Herptiles">Herptiles (Turtles, Snakes)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Specific Common Name</label>
+                  <input
+                    type="text"
+                    value={newReport.specificSpecies}
+                    onChange={e => setNewReport({ ...newReport, specificSpecies: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-xs"
+                    placeholder="e.g. Turkey Vulture, Mourning Dove"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Animal Condition & Stage</label>
+                  <input
+                    type="text"
+                    value={newReport.animalCondition}
+                    onChange={e => setNewReport({ ...newReport, animalCondition: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-xs"
+                    placeholder="e.g. Wing droop, injured, baby"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Assigned Contact / Rehabber</label>
+                  <input
+                    type="text"
+                    value={newReport.assignedRehabberName}
+                    onChange={e => setNewReport({ ...newReport, assignedRehabberName: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-xs"
+                    placeholder="Rehabber or center name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Outcome Status</label>
+                  <select
+                    value={newReport.outcomeStatus}
+                    onChange={e => setNewReport({ ...newReport, outcomeStatus: e.target.value as RescueReport['outcomeStatus'] })}
+                    className="w-full px-3 py-2 border rounded-lg text-xs bg-white font-bold"
+                  >
+                    <option value="Referred to Rehabber">Referred to Rehabber</option>
+                    <option value="Referred to Carrier">Referred to Carrier</option>
+                    <option value="Referred to ODFW/Police">Referred to ODFW/Police</option>
+                    <option value="Resolved - Left in Place">Resolved - Left in Place</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center space-x-4 pt-4">
+                  <label className="flex items-center space-x-2 text-xs font-bold cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newReport.isCatCaught}
+                      onChange={e => setNewReport({ ...newReport, isCatCaught: e.target.checked })}
+                      className="rounded text-emerald-600"
+                    />
+                    <span>Cat Bite Flag</span>
+                  </label>
+
+                  <label className="flex items-center space-x-2 text-xs font-bold cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newReport.isProhibited}
+                      onChange={e => setNewReport({ ...newReport, isProhibited: e.target.checked })}
+                      className="rounded text-emerald-600"
+                    />
+                    <span>Prohibited / Referral Flag</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Call Notes</label>
+                <textarea
+                  rows={3}
+                  value={newReport.notes}
+                  onChange={e => setNewReport({ ...newReport, notes: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Additional dispatch details..."
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-4 py-2 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save to Firebase DB</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
