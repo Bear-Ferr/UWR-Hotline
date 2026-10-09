@@ -1,3 +1,16 @@
+import { db, isFirebaseConfigured } from './firebase';
+import {
+  collection,
+  doc,
+  setDoc,
+  getDocs,
+  onSnapshot,
+  deleteDoc,
+  updateDoc,
+  query,
+  orderBy
+} from 'firebase/firestore';
+
 export interface UserAccount {
   id: string;
   name: string;
@@ -95,6 +108,12 @@ export const storageService = {
     users.push(newUser);
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
     this.setCurrentUser(newUser);
+
+    // Sync to Firestore if configured
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'uwr_users', newUser.id), newUser).catch(console.error);
+    }
+
     return newUser;
   },
 
@@ -112,13 +131,17 @@ export const storageService = {
     const users = this.getUsers().map(u => u.id === updated.id ? updated : u);
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
     this.setCurrentUser(updated);
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'uwr_users', updated.id), updated, { merge: true }).catch(console.error);
+    }
   },
 
   // --- RESCUE REPORTS HISTORY ---
   getReports(): RescueReport[] {
     const raw = localStorage.getItem(REPORTS_KEY);
     if (!raw) {
-      // Seed a couple sample reports for immediate user demo feedback
+      // Seed initial sample reports
       const sampleReports: RescueReport[] = [
         {
           id: 'rep-1001',
@@ -156,6 +179,11 @@ export const storageService = {
         }
       ];
       localStorage.setItem(REPORTS_KEY, JSON.stringify(sampleReports));
+
+      if (isFirebaseConfigured && db) {
+        sampleReports.forEach(r => setDoc(doc(db, 'uwr_rescue_reports', r.id), r).catch(console.error));
+      }
+
       return sampleReports;
     }
     try {
@@ -163,6 +191,35 @@ export const storageService = {
     } catch {
       return [];
     }
+  },
+
+  // Real-Time Firebase Listener for Multi-Device Sync
+  subscribeToReports(callback: (reports: RescueReport[]) => void): () => void {
+    if (isFirebaseConfigured && db) {
+      const q = query(collection(db, 'uwr_rescue_reports'));
+      const unsubscribe = onSnapshot(q, snapshot => {
+        const cloudReports: RescueReport[] = [];
+        snapshot.forEach(docSnap => {
+          cloudReports.push(docSnap.data() as RescueReport);
+        });
+
+        // Sort newest first
+        cloudReports.sort((a, b) => new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime());
+
+        // Update local cache
+        localStorage.setItem(REPORTS_KEY, JSON.stringify(cloudReports));
+        callback(cloudReports);
+      }, err => {
+        console.warn('Firestore subscription fallback to local cache:', err);
+        callback(this.getReports());
+      });
+
+      return unsubscribe;
+    }
+
+    // Fallback if Firebase not configured
+    callback(this.getReports());
+    return () => {};
   },
 
   addReport(reportData: Omit<RescueReport, 'id' | 'userId' | 'userName' | 'dateSubmitted'>): RescueReport {
@@ -175,24 +232,42 @@ export const storageService = {
       userName: currentUser.name,
       dateSubmitted: new Date().toLocaleString()
     };
-    reports.unshift(newReport); // newest first
+
+    reports.unshift(newReport);
     localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'uwr_rescue_reports', newReport.id), newReport).catch(console.error);
+    }
+
     return newReport;
   },
 
   updateReportStatus(reportId: string, status: RescueReport['outcomeStatus']): void {
     const reports = this.getReports().map(r => r.id === reportId ? { ...r, outcomeStatus: status } : r);
     localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+
+    if (isFirebaseConfigured && db) {
+      updateDoc(doc(db, 'uwr_rescue_reports', reportId), { outcomeStatus: status }).catch(console.error);
+    }
   },
 
   updateReport(updatedReport: RescueReport): void {
     const reports = this.getReports().map(r => r.id === updatedReport.id ? updatedReport : r);
     localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'uwr_rescue_reports', updatedReport.id), updatedReport, { merge: true }).catch(console.error);
+    }
   },
 
   deleteReport(reportId: string): void {
     const reports = this.getReports().filter(r => r.id !== reportId);
     localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+
+    if (isFirebaseConfigured && db) {
+      deleteDoc(doc(db, 'uwr_rescue_reports', reportId)).catch(console.error);
+    }
   },
 
   getUserReports(userId: string): RescueReport[] {

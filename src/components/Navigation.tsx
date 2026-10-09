@@ -1,6 +1,7 @@
 import React from 'react';
 import { PhoneCall, BookOpen, Search, Clock, UserCheck, ShieldAlert, LogOut, Sparkles } from 'lucide-react';
 import type { UserAccount } from '../services/storageService';
+import { FirebaseSyncStatus } from './FirebaseSyncStatus';
 
 export type ActiveTab = 'dispatch' | 'directory' | 'wildlife-guide' | 'history' | 'knowledge-base';
 
@@ -44,8 +45,10 @@ export const Navigation: React.FC<NavigationProps> = ({
           </div>
         </div>
 
-        {/* User Profile, AI Button & Logout */}
+        {/* User Profile, AI Button, DB Sync & Logout */}
         <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
+          <FirebaseSyncStatus />
+
           {onOpenAIPhotoID && (
             <button
               onClick={onOpenAIPhotoID}

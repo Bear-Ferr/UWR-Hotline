@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
 import type { RescueReport, UserAccount } from '../services/storageService';
 import { Clock, Search, MapPin, FileText, Download, CheckCircle, ArrowUpRight, ShieldAlert, BarChart3, Edit3, Trash2, X, Save, AlertTriangle } from 'lucide-react';
@@ -11,6 +11,14 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
   const [reports, setReports] = useState<RescueReport[]>(() => storageService.getUserReports(currentUser.id));
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOutcomeFilter, setSelectedOutcomeStatusFilter] = useState<string>('All');
+
+  // Real-Time Multi-Device Firebase Subscription
+  useEffect(() => {
+    const unsubscribe = storageService.subscribeToReports(allReports => {
+      setReports(allReports.filter(r => r.userId === currentUser.id));
+    });
+    return () => unsubscribe();
+  }, [currentUser.id]);
 
   // Edit Modal State
   const [editingReport, setEditingReport] = useState<RescueReport | null>(null);
