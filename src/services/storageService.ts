@@ -55,8 +55,8 @@ const DEFAULT_USER: UserAccount = {
   joinedDate: new Date().toISOString().split('T')[0]
 };
 
-// Initial default sample reports
-const SAMPLE_REPORTS: RescueReport[] = [
+// Default sample reports catalog
+export const SAMPLE_REPORTS: RescueReport[] = [
   {
     id: 'rep-1001',
     userId: DEFAULT_USER.id,
@@ -77,6 +77,24 @@ const SAMPLE_REPORTS: RescueReport[] = [
   },
   {
     id: 'rep-1002',
+    userId: DEFAULT_USER.id,
+    userName: DEFAULT_USER.name,
+    dateSubmitted: new Date(Date.now() - 86400000 * 1.5).toLocaleString(),
+    callerName: 'Dave Higgins',
+    callerPhone: '541-440-1122',
+    callerLocation: 'Glide, OR',
+    speciesCategory: 'Vultures & Scavengers',
+    specificSpecies: 'Turkey Vulture',
+    animalCondition: 'Grounded adult turkey vulture near roadside with wing droop',
+    isCatCaught: false,
+    isProhibited: false,
+    assignedRehabberId: 'joe-reicherts',
+    assignedRehabberName: 'Joe Reicherts',
+    outcomeStatus: 'Referred to Rehabber',
+    notes: 'Warned caller about defensive stomach acid. Referred to Joe Reicherts for transport.'
+  },
+  {
+    id: 'rep-1003',
     userId: DEFAULT_USER.id,
     userName: DEFAULT_USER.name,
     dateSubmitted: new Date(Date.now() - 86400000).toLocaleString(),
@@ -184,11 +202,11 @@ export const storageService = {
     try {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Maintain a safety backup whenever reports exist
         localStorage.setItem(REPORTS_BACKUP_KEY, JSON.stringify(parsed));
         return parsed;
       }
-      // Check backup key if current key is empty
+      
+      // If array is empty [], try backup key
       const backupRaw = localStorage.getItem(REPORTS_BACKUP_KEY);
       if (backupRaw) {
         const backupParsed = JSON.parse(backupRaw);
@@ -197,13 +215,54 @@ export const storageService = {
           return backupParsed;
         }
       }
+
+      // If both empty, fallback to sample reports
+      localStorage.setItem(REPORTS_KEY, JSON.stringify(SAMPLE_REPORTS));
+      localStorage.setItem(REPORTS_BACKUP_KEY, JSON.stringify(SAMPLE_REPORTS));
       return SAMPLE_REPORTS;
     } catch {
       return SAMPLE_REPORTS;
     }
   },
 
-  // Real-Time Firebase Subscription with Smart Merge & Auto-Migration
+  // Deep Scan browser storage for any lost reports in memory/keys
+  scanBrowserStorageForLostReports(): RescueReport[] {
+    const recovered: RescueReport[] = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        const val = localStorage.getItem(key);
+        if (!val || (!val.includes('callerName') && !val.includes('speciesCategory'))) continue;
+
+        try {
+          const parsed = JSON.parse(val);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(item => {
+              if (item && item.callerName && item.speciesCategory && !recovered.some(r => r.id === item.id)) {
+                recovered.push(item);
+              }
+            });
+          } else if (parsed && parsed.callerName && parsed.speciesCategory) {
+            if (!recovered.some(r => r.id === parsed.id)) {
+              recovered.push(parsed);
+            }
+          }
+        } catch {
+          // ignore non-json
+        }
+      }
+    } catch (e) {
+      console.warn('Storage scanner error:', e);
+    }
+
+    if (recovered.length === 0) {
+      return SAMPLE_REPORTS;
+    }
+    return recovered;
+  },
+
+  // Real-Time Firebase Subscription
   subscribeToReports(callback: (reports: RescueReport[]) => void): () => void {
     if (isFirebaseConfigured && db) {
       const q = query(collection(db, 'uwr_rescue_reports'));
@@ -215,9 +274,9 @@ export const storageService = {
 
         const currentLocal = this.getReports();
 
-        // If cloud database is empty but local storage has existing reports, auto-upload local reports to cloud!
+        // If cloud database is empty, migrate current local reports to cloud!
         if (cloudReports.length === 0 && currentLocal.length > 0) {
-          console.info('Migrating existing local reports to Cloud Firestore...');
+          console.info('Migrating local reports to Cloud Firestore...');
           currentLocal.forEach(r => {
             setDoc(doc(db, 'uwr_rescue_reports', r.id), r).catch(console.error);
           });
@@ -225,10 +284,10 @@ export const storageService = {
           return;
         }
 
-        // Smart merge cloud reports with any unsynced local reports
+        // Merge cloud and local
         const map = new Map<string, RescueReport>();
         currentLocal.forEach(r => map.set(r.id, r));
-        cloudReports.forEach(r => map.set(r.id, r)); // cloud overrides
+        cloudReports.forEach(r => map.set(r.id, r));
 
         const merged = Array.from(map.values());
         merged.sort((a, b) => new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime());
@@ -237,7 +296,7 @@ export const storageService = {
         localStorage.setItem(REPORTS_BACKUP_KEY, JSON.stringify(merged));
         callback(merged);
       }, err => {
-        console.warn('Firestore subscription fallback to local cache:', err);
+        console.warn('Firestore subscription permission or connection fallback:', err);
         callback(this.getReports());
       });
 
@@ -301,20 +360,11 @@ export const storageService = {
   },
 
   restoreBackup(): RescueReport[] {
-    const backupRaw = localStorage.getItem(REPORTS_BACKUP_KEY);
-    let toRestore = SAMPLE_REPORTS;
-    if (backupRaw) {
-      try {
-        const parsed = JSON.parse(backupRaw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          toRestore = parsed;
-        }
-      } catch {
-        toRestore = SAMPLE_REPORTS;
-      }
-    }
+    const scanned = this.scanBrowserStorageForLostReports();
+    const toRestore = scanned.length > 0 ? scanned : SAMPLE_REPORTS;
 
     localStorage.setItem(REPORTS_KEY, JSON.stringify(toRestore));
+    localStorage.setItem(REPORTS_BACKUP_KEY, JSON.stringify(toRestore));
 
     if (isFirebaseConfigured && db) {
       toRestore.forEach(r => setDoc(doc(db, 'uwr_rescue_reports', r.id), r).catch(console.error));
@@ -324,6 +374,6 @@ export const storageService = {
   },
 
   getUserReports(userId: string): RescueReport[] {
-    return this.getReports(); // Return all team reports for hotline view
+    return this.getReports();
   }
 };
