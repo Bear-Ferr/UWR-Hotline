@@ -292,16 +292,11 @@ export const storageService = {
           return;
         }
 
-        const map = new Map<string, RescueReport>();
-        currentLocal.forEach(r => map.set(r.id, r));
-        cloudReports.forEach(r => map.set(r.id, r));
+        cloudReports.sort((a, b) => new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime());
 
-        const merged = Array.from(map.values());
-        merged.sort((a, b) => new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime());
-
-        localStorage.setItem(REPORTS_KEY, JSON.stringify(merged));
-        localStorage.setItem(REPORTS_BACKUP_KEY, JSON.stringify(merged));
-        callback(merged);
+        localStorage.setItem(REPORTS_KEY, JSON.stringify(cloudReports));
+        localStorage.setItem(REPORTS_BACKUP_KEY, JSON.stringify(cloudReports));
+        callback(cloudReports);
       }, err => {
         console.warn('Firestore subscription fallback:', err);
         callback(this.getReports());

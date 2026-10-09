@@ -1,0 +1,36 @@
+[
+  {
+    "id": "rep-1002",
+    "specificSpecies": "Adult Raccoon in attic",
+    "userId": "uwr-vol-101",
+    "dateSubmitted": "10/7/2026, 7:22:48 PM",
+    "notes": "Adult raccoon is a prohibited species for UWR. Referred caller to ODFW Roseburg Office (541-440-3353).",
+    "speciesCategory": "Mammal (Prohibited)",
+    "outcomeStatus": "Referred to ODFW/Police",
+    "isCatCaught": false,
+    "animalCondition": "Adult raccoon stuck in chimney",
+    "callerName": "Tom Jenkins",
+    "userName": "Brandon Volunteer",
+    "callerPhone": "541-863-9988",
+    "callerLocation": "Myrtle Creek",
+    "isProhibited": true
+  },
+  {
+    "isProhibited": false,
+    "isCatCaught": false,
+    "assignedRehabberId": "brenda-weber",
+    "dateSubmitted": "10/6/2026, 7:22:48 PM",
+    "specificSpecies": "Fledgling American Robin",
+    "callerPhone": "541-673-1234",
+    "id": "rep-1001",
+    "notes": "Advised caller to put cat indoors and leave fledgling in bush. Referred to Brenda Weber for check.",
+    "userId": "uwr-vol-101",
+    "outcomeStatus": "Referred to Rehabber",
+    "assignedRehabberName": "Brenda Weber",
+    "userName": "Brandon Volunteer",
+    "callerLocation": "Garden Valley Rd, Roseburg",
+    "animalCondition": "Feathered baby hopping in garden near neighbor's cat",
+    "callerName": "Sarah Miller",
+    "speciesCategory": "Passerine"
+  }
+]
