@@ -143,7 +143,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Your Registered Email
+                      Your Email (Gmail, Yahoo, iCloud, etc.)
                     </label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
@@ -152,7 +152,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         required
                         value={loginEmail}
                         onChange={e => setLoginEmail(e.target.value)}
-                        placeholder="e.g. syndi@umpquawildlife.org"
+                        placeholder="e.g. yourname@gmail.com"
                         className="w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none transition"
                       />
                     </div>
@@ -266,7 +266,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       required
                       value={regEmail}
                       onChange={e => setRegEmail(e.target.value)}
-                      placeholder="e.g. jessica@example.com"
+                      placeholder="e.g. jessica@gmail.com"
                       className="w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
                     />
                   </div>
