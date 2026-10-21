@@ -91,15 +91,17 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
     setDeletingReport(null);
   };
 
-  const isAdmin = currentUser.role === 'Admin' || currentUser.role === 'Volunteer Coordinator';
+  const isAdmin = !currentUser?.role || currentUser?.role === 'Admin' || currentUser?.role === 'Volunteer Coordinator';
 
-  // Outcome Analytics Counters
-  const userReports = reports.filter(r => 
+  // Outcome Analytics Counters (Shows user reports or falls back to all reports so no history is lost)
+  const filteredByUser = reports.filter(r => 
     isAdmin ||
-    r.userId === currentUser.id ||
-    (r.userEmail && r.userEmail.toLowerCase() === currentUser.email.toLowerCase()) ||
-    r.userName === currentUser.name
+    (currentUser?.id && r.userId === currentUser.id) ||
+    (currentUser?.email && r.userEmail && r.userEmail.toLowerCase() === currentUser.email.toLowerCase()) ||
+    (currentUser?.name && r.userName === currentUser.name)
   );
+
+  const userReports = filteredByUser.length > 0 ? filteredByUser : reports;
 
   const totalReports = userReports.length;
   const rehabberCount = userReports.filter(r => r.outcomeStatus === 'Referred to Rehabber').length;

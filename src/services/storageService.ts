@@ -41,8 +41,8 @@ export interface RescueReport {
   notes: string;
 }
 
-const USERS_KEY = 'uwr_app_users_v2';
-const CURRENT_USER_KEY = 'uwr_app_current_user_v2';
+const USERS_KEY = 'uwr_app_users_v1';
+const CURRENT_USER_KEY = 'uwr_app_current_user_v1';
 const REPORTS_KEY = 'uwr_app_rescue_reports_v1';
 const REPORTS_BACKUP_KEY = 'uwr_app_rescue_reports_backup_v1';
 
@@ -80,14 +80,15 @@ const DEFAULT_REHABBER_USER: UserAccount = {
   joinedDate: '2024-06-10'
 };
 
+const DEFAULT_USER = DEFAULT_ADMIN_USER;
 const INITIAL_USERS: UserAccount[] = [DEFAULT_ADMIN_USER, DEFAULT_VOLUNTEER_USER, DEFAULT_REHABBER_USER];
 
 // Expanded baseline sample reports catalog
 export const SAMPLE_REPORTS: RescueReport[] = [
   {
     id: 'rep-1001',
-    userId: DEFAULT_USER.id,
-    userName: DEFAULT_USER.name,
+    userId: DEFAULT_ADMIN_USER.id,
+    userName: DEFAULT_ADMIN_USER.name,
     dateSubmitted: new Date(Date.now() - 86400000 * 2).toLocaleString(),
     callerName: 'Sarah Miller',
     callerPhone: '541-673-1234',
@@ -104,8 +105,8 @@ export const SAMPLE_REPORTS: RescueReport[] = [
   },
   {
     id: 'rep-1002',
-    userId: DEFAULT_USER.id,
-    userName: DEFAULT_USER.name,
+    userId: DEFAULT_ADMIN_USER.id,
+    userName: DEFAULT_ADMIN_USER.name,
     dateSubmitted: new Date(Date.now() - 86400000 * 1.5).toLocaleString(),
     callerName: 'Dave Higgins',
     callerPhone: '541-440-1122',
@@ -122,8 +123,8 @@ export const SAMPLE_REPORTS: RescueReport[] = [
   },
   {
     id: 'rep-1003',
-    userId: DEFAULT_USER.id,
-    userName: DEFAULT_USER.name,
+    userId: DEFAULT_ADMIN_USER.id,
+    userName: DEFAULT_ADMIN_USER.name,
     dateSubmitted: new Date(Date.now() - 86400000 * 1.2).toLocaleString(),
     callerName: 'Evelyn Reed',
     callerPhone: '541-679-5544',
@@ -140,8 +141,8 @@ export const SAMPLE_REPORTS: RescueReport[] = [
   },
   {
     id: 'rep-1004',
-    userId: DEFAULT_USER.id,
-    userName: DEFAULT_USER.name,
+    userId: DEFAULT_ADMIN_USER.id,
+    userName: DEFAULT_ADMIN_USER.name,
     dateSubmitted: new Date(Date.now() - 86400000).toLocaleString(),
     callerName: 'Tom Jenkins',
     callerPhone: '541-863-9988',

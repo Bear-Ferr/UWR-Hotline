@@ -20,7 +20,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenAuth,
   onLogout
 }) => {
-  const isAdminUser = currentUser.role === 'Admin' || currentUser.role === 'Volunteer Coordinator';
+  const isAdminUser = currentUser?.role === 'Admin' || currentUser?.role === 'Volunteer Coordinator';
 
   return (
     <header className="bg-emerald-900 text-white shadow-md border-b border-emerald-800 sticky top-0 z-40">
