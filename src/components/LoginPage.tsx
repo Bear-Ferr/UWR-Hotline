@@ -1,7 +1,22 @@
 import React, { useState } from 'react';
 import { storageService } from '../services/storageService';
 import type { UserAccount } from '../services/storageService';
-import { ShieldCheck, Mail, Phone, MapPin, User, LogIn, UserPlus, Heart, AlertCircle } from 'lucide-react';
+import { 
+  ShieldCheck, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  User, 
+  LogIn, 
+  UserPlus, 
+  Heart, 
+  AlertCircle, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  Clock, 
+  CheckCircle2 
+} from 'lucide-react';
 
 interface LoginPageProps {
   onLogin: (user: UserAccount) => void;
@@ -12,6 +27,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   
   // Login Form
   const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
 
   // Registration Form
@@ -19,7 +36,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [regCity, setRegCity] = useState('Roseburg');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [regError, setRegError] = useState('');
+  const [regSubmitted, setRegSubmitted] = useState(false);
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,22 +50,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       return;
     }
 
-    const user = storageService.loginUser(loginEmail.trim());
-    if (user) {
-      if (user.status === 'Suspended') {
-        setLoginError('This volunteer account is currently suspended. Please contact Syndi Michael (503-358-2348).');
-        return;
-      }
-      onLogin(user);
+    const res = storageService.loginUser(loginEmail.trim(), loginPassword.trim());
+    if (res.success && res.user) {
+      onLogin(res.user);
     } else {
-      setLoginError('No volunteer account found with that email. Please check your spelling or register a new account below.');
+      setLoginError(res.error || 'Login failed. Please verify credentials.');
     }
   };
 
-  const handleQuickLogin = (email: string) => {
-    const user = storageService.loginUser(email);
-    if (user) {
-      onLogin(user);
+  const handleQuickLogin = (email: string, password = 'admin') => {
+    setLoginEmail(email);
+    setLoginPassword(password);
+    const res = storageService.loginUser(email, password);
+    if (res.success && res.user) {
+      onLogin(res.user);
+    } else if (res.error) {
+      setLoginError(res.error);
     }
   };
 
@@ -57,15 +78,30 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       return;
     }
 
-    const newUser = storageService.registerUser(
+    if (!regPassword || regPassword.length < 4) {
+      setRegError('Please choose a password with at least 4 characters.');
+      return;
+    }
+
+    if (regPassword !== regConfirmPassword) {
+      setRegError('Passwords do not match. Please verify.');
+      return;
+    }
+
+    const res = storageService.registerUser(
       regName.trim(),
       regEmail.trim(),
       regPhone.trim(),
-      'Hotline Operator',
-      regCity.trim() || 'Roseburg'
+      regPassword.trim(),
+      regCity.trim() || 'Roseburg',
+      false // Requires admin approval!
     );
 
-    onLogin(newUser);
+    if (res.success) {
+      setRegSubmitted(true);
+    } else {
+      setRegError(res.error || 'Could not complete registration.');
+    }
   };
 
   return (
@@ -106,7 +142,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <div className="flex border-b border-gray-200 bg-gray-50 text-xs sm:text-sm font-semibold">
               <button
                 type="button"
-                onClick={() => { setActiveTab('login'); setLoginError(''); }}
+                onClick={() => { setActiveTab('login'); setLoginError(''); setRegSubmitted(false); }}
                 className={`flex-1 py-3.5 text-center flex items-center justify-center gap-1.5 border-b-2 transition ${
                   activeTab === 'login'
                     ? 'border-emerald-700 text-emerald-900 bg-white font-bold'
@@ -158,9 +194,36 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     </div>
                   </div>
 
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        Password
+                      </label>
+                      <span className="text-[11px] text-gray-400">Default: admin / rescue</span>
+                    </div>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                      <input
+                        type={showLoginPassword ? 'text' : 'password'}
+                        required
+                        value={loginPassword}
+                        onChange={e => setLoginPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none transition"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                      >
+                        {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
-                    className="w-full py-3 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition text-sm flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition text-sm flex items-center justify-center gap-2 mt-2"
                   >
                     <LogIn className="w-4 h-4" />
                     <span>Enter Dispatch Portal</span>
@@ -175,7 +238,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <div className="space-y-1.5">
                     <button
                       type="button"
-                      onClick={() => handleQuickLogin('syndi@umpquawildlife.org')}
+                      onClick={() => handleQuickLogin('syndi@umpquawildlife.org', 'admin')}
                       className="w-full p-2.5 rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-100/70 text-left flex items-center justify-between text-xs transition"
                     >
                       <div className="flex items-center gap-2">
@@ -192,7 +255,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
                     <button
                       type="button"
-                      onClick={() => handleQuickLogin('brandon@umpquawildlife.org')}
+                      onClick={() => handleQuickLogin('brandon@umpquawildlife.org', 'admin')}
                       className="w-full p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/60 text-left flex items-center justify-between text-xs transition"
                     >
                       <div className="flex items-center gap-2">
@@ -209,7 +272,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
                     <button
                       type="button"
-                      onClick={() => handleQuickLogin('brenda@umpquawildlife.org')}
+                      onClick={() => handleQuickLogin('brenda@umpquawildlife.org', 'rescue')}
                       className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-left flex items-center justify-between text-xs transition"
                     >
                       <div className="flex items-center gap-2">
@@ -230,92 +293,164 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
             {/* Tab 2: VOLUNTEER REGISTRATION */}
             {activeTab === 'register' && (
-              <form onSubmit={handleRegisterSubmit} className="p-6 sm:p-7 space-y-4">
-                {regError && (
-                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                    <span>{regError}</span>
+              <div className="p-6 sm:p-7">
+                {regSubmitted ? (
+                  <div className="text-center py-6 space-y-4">
+                    <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+                      <Clock className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">Application Submitted!</h3>
+                      <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+                        Thank you for applying to volunteer with Umpqua Wildlife Rescue! Your account has been registered and is currently <span className="font-bold text-amber-700">pending approval by Coordinator Syndi Michael</span>.
+                      </p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Once Syndi approves your account, you will be able to log in with your email and password.
+                      </p>
+                    </div>
+
+                    <div className="pt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRegSubmitted(false);
+                          setActiveTab('login');
+                        }}
+                        className="w-full py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl text-xs shadow transition"
+                      >
+                        Return to Sign In
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+                    {regError && (
+                      <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                        <span>{regError}</span>
+                      </div>
+                    )}
+
+                    <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-xl text-amber-900 text-[11px] flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Registration requires review and approval from Coordinator Syndi Michael.</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Full Name
+                      </label>
+                      <div className="relative">
+                        <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                        <input
+                          type="text"
+                          required
+                          value={regName}
+                          onChange={e => setRegName(e.target.value)}
+                          placeholder="e.g. Jessica Hayes"
+                          className="w-full pl-10 pr-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Personal Email
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                        <input
+                          type="email"
+                          required
+                          value={regEmail}
+                          onChange={e => setRegEmail(e.target.value)}
+                          placeholder="e.g. jessica@gmail.com"
+                          className="w-full pl-10 pr-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                          Phone Number
+                        </label>
+                        <div className="relative">
+                          <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                          <input
+                            type="tel"
+                            required
+                            value={regPhone}
+                            onChange={e => setRegPhone(e.target.value)}
+                            placeholder="541-555-0123"
+                            className="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                          City / Area
+                        </label>
+                        <div className="relative">
+                          <MapPin className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                          <input
+                            type="text"
+                            value={regCity}
+                            onChange={e => setRegCity(e.target.value)}
+                            placeholder="Roseburg"
+                            className="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                          Create Password
+                        </label>
+                        <div className="relative">
+                          <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                          <input
+                            type={showRegPassword ? 'text' : 'password'}
+                            required
+                            value={regPassword}
+                            onChange={e => setRegPassword(e.target.value)}
+                            placeholder="Min 4 chars"
+                            className="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                          Confirm Password
+                        </label>
+                        <div className="relative">
+                          <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                          <input
+                            type={showRegPassword ? 'text' : 'password'}
+                            required
+                            value={regConfirmPassword}
+                            onChange={e => setRegConfirmPassword(e.target.value)}
+                            placeholder="Repeat"
+                            className="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition text-sm flex items-center justify-center gap-2 mt-2"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>Submit Application for Approval</span>
+                    </button>
+                  </form>
                 )}
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
-                    <input
-                      type="text"
-                      required
-                      value={regName}
-                      onChange={e => setRegName(e.target.value)}
-                      placeholder="e.g. Jessica Hayes"
-                      className="w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
-                    <input
-                      type="email"
-                      required
-                      value={regEmail}
-                      onChange={e => setRegEmail(e.target.value)}
-                      placeholder="e.g. jessica@gmail.com"
-                      className="w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Phone Number
-                  </label>
-                  <div className="relative">
-                    <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
-                    <input
-                      type="tel"
-                      required
-                      value={regPhone}
-                      onChange={e => setRegPhone(e.target.value)}
-                      placeholder="e.g. 541-555-0123"
-                      className="w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    City / Service Area
-                  </label>
-                  <div className="relative">
-                    <MapPin className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
-                    <input
-                      type="text"
-                      value={regCity}
-                      onChange={e => setRegCity(e.target.value)}
-                      placeholder="e.g. Roseburg, Glide, Sutherlin"
-                      className="w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
-                    />
-                  </div>
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    New accounts are registered as <span className="font-bold text-emerald-800">Hotline Operator</span>. Admin Coordinators can adjust roles upon approval.
-                  </p>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition text-sm flex items-center justify-center gap-2 mt-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Register & Open Portal</span>
-                </button>
-              </form>
+              </div>
             )}
           </div>
 

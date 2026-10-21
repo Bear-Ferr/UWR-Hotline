@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
 import type { UserAccount } from '../services/storageService';
-import { X, User, Phone, Mail, MapPin, ShieldCheck, LogOut, CheckCircle2 } from 'lucide-react';
+import { X, User, Phone, Mail, MapPin, ShieldCheck, LogOut, CheckCircle2, Lock } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [email, setEmail] = useState(currentUser.email);
   const [phone, setPhone] = useState(currentUser.phone);
   const [city, setCity] = useState(currentUser.city);
+  const [newPassword, setNewPassword] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setEmail(currentUser.email);
     setPhone(currentUser.phone);
     setCity(currentUser.city);
+    setNewPassword('');
     setSavedSuccess(false);
   }, [currentUser, isOpen]);
 
@@ -41,7 +43,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       name,
       email,
       phone,
-      city
+      city,
+      ...(newPassword.trim() ? { password: newPassword.trim() } : {})
     };
     storageService.updateUserProfile(updated);
     onUserUpdated(updated);
@@ -159,6 +162,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <span>{currentUser.role}</span>
                   {isAdmin && <ShieldCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
                 </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                Update Password (Optional)
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="Leave blank to keep current password"
+                  className="w-full pl-9 pr-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
               </div>
             </div>
 

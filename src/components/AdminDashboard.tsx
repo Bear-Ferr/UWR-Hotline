@@ -19,7 +19,8 @@ import {
   Calendar,
   X,
   RefreshCw,
-  Building
+  Building,
+  Clock
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -65,19 +66,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     e.preventDefault();
     if (!newUserName.trim() || !newUserEmail.trim()) return;
 
-    storageService.registerUser(
+    const res = storageService.registerUser(
       newUserName.trim(),
       newUserEmail.trim(),
       newUserPhone.trim() || '541-000-0000',
-      newUserRole,
-      newUserCity
+      'uwr2025',
+      newUserCity,
+      true // Admin-added users are pre-approved
     );
+
+    if (res.user && newUserRole !== 'Hotline Operator') {
+      storageService.updateUser({ ...res.user, role: newUserRole });
+    }
 
     // Reset & close modal
     setNewUserName('');
     setNewUserEmail('');
     setNewUserPhone('');
     setIsAddUserModalOpen(false);
+    refreshData();
+  };
+
+  const handleApproveUser = (userId: string, role?: UserAccount['role']) => {
+    storageService.approveUser(userId, role);
     refreshData();
   };
 
@@ -195,6 +206,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
   // Analytics Metrics
   const totalCalls = reports.length;
+  const pendingUsers = users.filter(u => u.status === 'Pending Approval');
   const activeVolunteersCount = users.filter(u => u.status === 'Active').length;
   const pendingCallsCount = reports.filter(r => r.outcomeStatus === 'Pending').length;
   const prohibitedCallsCount = reports.filter(r => r.isProhibited).length;
@@ -209,7 +221,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight">UWR Admin Portal & Control Center</h1>
           </div>
           <p className="text-emerald-200 text-xs sm:text-sm">
-            Manage dispatchers, assign roles, inspect organization-wide hotline rescue logs, and export annual ODFW reports.
+            Manage dispatchers, approve registrations, assign roles, inspect master rescue logs, and export ODFW reports.
           </p>
         </div>
 
@@ -245,12 +257,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-3">
-          <div className="p-3 bg-amber-100 rounded-lg text-amber-800">
-            <RefreshCw className="w-6 h-6" />
+          <div className={`p-3 rounded-lg ${pendingUsers.length > 0 ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>
+            <Clock className={`w-6 h-6 ${pendingUsers.length > 0 ? 'animate-pulse text-amber-600' : ''}`} />
           </div>
           <div>
-            <div className="text-2xl font-extrabold text-gray-900">{pendingCallsCount}</div>
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pending Action</div>
+            <div className={`text-2xl font-extrabold ${pendingUsers.length > 0 ? 'text-amber-600' : 'text-gray-900'}`}>
+              {pendingUsers.length}
+            </div>
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pending Approvals</div>
           </div>
         </div>
 
@@ -277,6 +291,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         >
           <Users className="w-4 h-4" />
           <span>Volunteer Accounts & User Roles ({users.length})</span>
+          {pendingUsers.length > 0 && (
+            <span className="bg-amber-500 text-emerald-950 px-2 py-0.5 rounded-full text-[10px] font-black animate-pulse">
+              {pendingUsers.length} Pending
+            </span>
+          )}
         </button>
 
         <button
@@ -295,6 +314,71 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
       {/* TAB 1: VOLUNTEER ACCOUNTS & ROLES */}
       {activeAdminTab === 'users' && (
         <div className="space-y-4">
+          {/* PENDING APPROVALS ALERT BANNER */}
+          {pendingUsers.length > 0 && (
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-5 h-5 text-amber-600 animate-pulse" />
+                  <h3 className="font-extrabold text-amber-950 text-sm sm:text-base">
+                    Pending Volunteer Registrations ({pendingUsers.length})
+                  </h3>
+                </div>
+                <span className="text-xs text-amber-800 font-medium hidden sm:inline">
+                  Coordinator approval required before dispatch portal access is granted
+                </span>
+              </div>
+
+              <div className="divide-y divide-amber-200/60 bg-white rounded-xl border border-amber-200 overflow-hidden">
+                {pendingUsers.map(applicant => (
+                  <div key={applicant.id} className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-amber-50/40 transition">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-gray-900 text-sm">{applicant.name}</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 uppercase">
+                          Awaiting Approval
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 text-xs text-gray-600">
+                        <span className="flex items-center gap-1 font-mono text-gray-700">
+                          <Mail className="w-3.5 h-3.5 text-gray-400" />
+                          <span>{applicant.email}</span>
+                        </span>
+                        <span className="flex items-center gap-1 font-mono text-gray-700">
+                          <Phone className="w-3.5 h-3.5 text-gray-400" />
+                          <span>{applicant.phone}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                          <span>{applicant.city}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                      <button
+                        onClick={() => handleApproveUser(applicant.id, 'Hotline Operator')}
+                        className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 shadow transition"
+                        title="Approve registration as Hotline Operator"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Approve Account</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(applicant.id, applicant.name)}
+                        className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold px-2.5 py-1.5 rounded-lg text-xs flex items-center space-x-1 transition"
+                        title="Decline application and remove"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Decline</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Controls Bar */}
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center space-x-2 w-full sm:w-auto flex-1 max-w-md">
@@ -353,7 +437,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                     <tr key={user.id} className="hover:bg-gray-50/80 transition">
                       <td className="p-3">
                         <div className="font-bold text-gray-900">{user.name}</div>
-                        <div className="text-[11px] text-gray-500">{user.email}</div>
+                        <div className="text-[11px] text-gray-500 font-mono">{user.email}</div>
                       </td>
                       <td className="p-3">
                         <select
@@ -371,18 +455,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       <td className="p-3 font-mono text-gray-800">{user.phone}</td>
                       <td className="p-3 text-gray-700">{user.city}</td>
                       <td className="p-3">
-                        <button
-                          onClick={() => handleStatusToggle(user.id)}
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition ${
-                            user.status === 'Active'
-                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                              : 'bg-red-100 text-red-800 hover:bg-red-200'
-                          }`}
-                        >
-                          {user.status || 'Active'}
-                        </button>
+                        {user.status === 'Pending Approval' ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+                            Pending Approval
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleStatusToggle(user.id)}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition ${
+                              user.status === 'Active'
+                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                : 'bg-red-100 text-red-800 hover:bg-red-200'
+                            }`}
+                          >
+                            {user.status || 'Active'}
+                          </button>
+                        )}
                       </td>
                       <td className="p-3 text-right space-x-2">
+                        {user.status === 'Pending Approval' && (
+                          <button
+                            onClick={() => handleApproveUser(user.id, user.role)}
+                            className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[11px] font-bold shadow inline-flex items-center gap-1 transition"
+                            title="Approve Volunteer"
+                          >
+                            <CheckCircle className="w-3 h-3 text-amber-300" />
+                            <span>Approve</span>
+                          </button>
+                        )}
                         {user.id !== currentUser.id && (
                           <button
                             onClick={() => handleDeleteUser(user.id, user.name)}

@@ -13,9 +13,10 @@ export interface UserAccount {
   id: string;
   name: string;
   email: string;
+  password?: string;
   phone: string;
   role: 'Hotline Operator' | 'Rehabber' | 'Critter Carrier' | 'Volunteer Coordinator' | 'Admin';
-  status: 'Active' | 'Suspended';
+  status: 'Active' | 'Pending Approval' | 'Suspended';
   city: string;
   joinedDate: string;
 }
@@ -51,6 +52,7 @@ const DEFAULT_ADMIN_USER: UserAccount = {
   id: 'uwr-admin-101',
   name: 'Syndi Michael',
   email: 'syndi@umpquawildlife.org',
+  password: 'admin',
   phone: '503-358-2348',
   role: 'Admin',
   status: 'Active',
@@ -62,6 +64,7 @@ const DEFAULT_VOLUNTEER_USER: UserAccount = {
   id: 'uwr-vol-101',
   name: 'Brandon Volunteer',
   email: 'brandon@umpquawildlife.org',
+  password: 'admin',
   phone: '541-499-4281',
   role: 'Admin',
   status: 'Active',
@@ -73,6 +76,7 @@ const DEFAULT_REHABBER_USER: UserAccount = {
   id: 'uwr-vol-102',
   name: 'Brenda Weber',
   email: 'brenda@umpquawildlife.org',
+  password: 'rescue',
   phone: '541-679-0000',
   role: 'Rehabber',
   status: 'Active',
@@ -206,32 +210,67 @@ export const storageService = {
     localStorage.removeItem(CURRENT_USER_KEY);
   },
 
-  registerUser(name: string, email: string, phone: string, role: UserAccount['role'], city: string): UserAccount {
+  registerUser(
+    name: string,
+    email: string,
+    phone: string,
+    password: string,
+    city: string,
+    autoApprove = false
+  ): { success: boolean; user?: UserAccount; error?: string } {
     const users = this.getUsers();
     const existing = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existing) {
-      this.setCurrentUser(existing);
-      return existing;
+      return { 
+        success: false, 
+        error: 'A volunteer account with this email address already exists. Please log in or contact your coordinator.' 
+      };
     }
     const newUser: UserAccount = {
       id: `uwr-vol-${Date.now()}`,
       name,
       email,
+      password: password || 'uwr2025',
       phone,
-      role,
-      status: 'Active',
+      role: 'Hotline Operator',
+      status: autoApprove ? 'Active' : 'Pending Approval', // Self-registered accounts require admin approval
       city,
       joinedDate: new Date().toISOString().split('T')[0]
     };
     users.push(newUser);
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    this.setCurrentUser(newUser);
+
+    if (autoApprove) {
+      this.setCurrentUser(newUser);
+    }
 
     if (isFirebaseConfigured && db) {
       setDoc(doc(db, 'uwr_users', newUser.id), newUser).catch(console.error);
     }
 
-    return newUser;
+    return { success: true, user: newUser };
+  },
+
+  approveUser(userId: string, role?: UserAccount['role']): void {
+    const users = this.getUsers();
+    const updated = users.map(u => {
+      if (u.id === userId) {
+        return {
+          ...u,
+          status: 'Active' as const,
+          role: role || u.role
+        };
+      }
+      return u;
+    });
+    localStorage.setItem(USERS_KEY, JSON.stringify(updated));
+
+    if (isFirebaseConfigured && db) {
+      const target = updated.find(u => u.id === userId);
+      if (target) {
+        setDoc(doc(db, 'uwr_users', target.id), target, { merge: true }).catch(console.error);
+      }
+    }
   },
 
   updateUser(updatedUser: UserAccount): void {
@@ -258,28 +297,56 @@ export const storageService = {
     }
   },
 
-  loginUser(email: string): UserAccount | null {
+  loginUser(email: string, password?: string): { success: boolean; user?: UserAccount; error?: string } {
     const users = this.getUsers();
-    const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (found) {
-      if (found.email === 'syndi@umpquawildlife.org' || found.email === 'brandon@umpquawildlife.org') {
-        found.role = 'Admin';
-      }
-      this.setCurrentUser(found);
-      return found;
-    }
+    const cleanEmail = email.trim().toLowerCase();
+    const found = users.find(u => u.email.toLowerCase() === cleanEmail);
     
-    // Fallback if logging in directly as Syndi or Brandon Admin
-    if (email.toLowerCase().includes('syndi')) {
-      this.setCurrentUser(DEFAULT_ADMIN_USER);
-      return DEFAULT_ADMIN_USER;
-    }
-    if (email.toLowerCase().includes('brandon')) {
-      this.setCurrentUser(DEFAULT_VOLUNTEER_USER);
-      return DEFAULT_VOLUNTEER_USER;
+    if (!found) {
+      // Fallback if logging in directly as Syndi or Brandon Admin
+      if (cleanEmail.includes('syndi')) {
+        this.setCurrentUser(DEFAULT_ADMIN_USER);
+        return { success: true, user: DEFAULT_ADMIN_USER };
+      }
+      if (cleanEmail.includes('brandon')) {
+        this.setCurrentUser(DEFAULT_VOLUNTEER_USER);
+        return { success: true, user: DEFAULT_VOLUNTEER_USER };
+      }
+      return { 
+        success: false, 
+        error: 'No volunteer account found with that email. Please check your spelling or register below.' 
+      };
     }
 
-    return null;
+    // Check approval status
+    if (found.status === 'Pending Approval') {
+      return {
+        success: false,
+        error: 'Your application is currently PENDING APPROVAL by Coordinator Syndi Michael (503-358-2348). You will be able to log in once approved.'
+      };
+    }
+
+    if (found.status === 'Suspended') {
+      return {
+        success: false,
+        error: 'This volunteer account is suspended. Please contact Syndi Michael (503-358-2348).'
+      };
+    }
+
+    // Password verification (if provided)
+    if (password && found.password && found.password !== password) {
+      return {
+        success: false,
+        error: 'Incorrect password. Please verify your password and try again.'
+      };
+    }
+
+    if (found.email === 'syndi@umpquawildlife.org' || found.email === 'brandon@umpquawildlife.org') {
+      found.role = 'Admin';
+    }
+
+    this.setCurrentUser(found);
+    return { success: true, user: found };
   },
 
   updateUserProfile(updated: UserAccount): void {
