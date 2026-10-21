@@ -15,7 +15,8 @@ import {
   Eye, 
   EyeOff, 
   Clock, 
-  CheckCircle2 
+  CheckCircle2,
+  KeyRound
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -23,13 +24,21 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>('login');
   
   // Login Form
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
+
+  // Forgot / Reset Password Form
+  const [resetEmail, setResetEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmResetPassword, setConfirmResetPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
 
   // Registration Form
   const [regName, setRegName] = useState('');
@@ -41,6 +50,37 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regError, setRegError] = useState('');
   const [regSubmitted, setRegSubmitted] = useState(false);
+
+  const handleResetSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    setResetSuccess('');
+
+    if (!resetEmail.trim()) {
+      setResetError('Please enter your registered email address.');
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 4) {
+      setResetError('New password must be at least 4 characters long.');
+      return;
+    }
+
+    if (newPassword !== confirmResetPassword) {
+      setResetError('Passwords do not match. Please verify.');
+      return;
+    }
+
+    const res = storageService.resetPassword(resetEmail.trim(), newPassword.trim());
+    if (res.success && res.user) {
+      setResetSuccess('Password updated successfully!');
+      setTimeout(() => {
+        onLogin(res.user!);
+      }, 700);
+    } else {
+      setResetError(res.error || 'Failed to reset password. Please check your email or contact Syndi.');
+    }
+  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,9 +224,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Password
-                    </label>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetEmail(loginEmail);
+                          setResetError('');
+                          setResetSuccess('');
+                          setActiveTab('forgot');
+                        }}
+                        className="text-xs text-emerald-800 hover:text-emerald-950 font-bold hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
                       <input
@@ -370,6 +424,125 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       <UserPlus className="w-4 h-4" />
                       <span>Submit Application for Approval</span>
                     </button>
+                  </form>
+                )}
+              </div>
+            )}
+
+            {/* Tab 3: FORGOT / RESET PASSWORD */}
+            {activeTab === 'forgot' && (
+              <div className="p-6 sm:p-7 space-y-4">
+                <div className="flex items-center gap-3 text-emerald-950 pb-2 border-b border-gray-100">
+                  <div className="p-2.5 bg-emerald-100 text-emerald-850 rounded-xl">
+                    <KeyRound className="w-5 h-5 text-emerald-800" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">Reset Your Password</h3>
+                    <p className="text-xs text-gray-500">Enter your email and choose a new password</p>
+                  </div>
+                </div>
+
+                {resetSuccess ? (
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-start gap-2.5">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-emerald-900">Password Updated Successfully!</p>
+                      <p className="mt-1 text-emerald-700">Logging you in to the dispatch portal...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleResetSubmit} className="space-y-3.5">
+                    {resetError && (
+                      <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                        <span>{resetError}</span>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Your Registered Email Address
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                        <input
+                          type="email"
+                          required
+                          value={resetEmail}
+                          onChange={e => setResetEmail(e.target.value)}
+                          placeholder="e.g. yourname@gmail.com"
+                          className="w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        New Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                        <input
+                          type={showResetPassword ? 'text' : 'password'}
+                          required
+                          value={newPassword}
+                          onChange={e => setNewPassword(e.target.value)}
+                          placeholder="At least 4 characters"
+                          className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowResetPassword(!showResetPassword)}
+                          className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                        >
+                          {showResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Confirm New Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                        <input
+                          type={showResetPassword ? 'text' : 'password'}
+                          required
+                          value={confirmResetPassword}
+                          onChange={e => setConfirmResetPassword(e.target.value)}
+                          placeholder="Confirm new password"
+                          className="w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 space-y-2">
+                      <button
+                        type="submit"
+                        className="w-full py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl text-xs shadow transition flex items-center justify-center gap-1.5"
+                      >
+                        <KeyRound className="w-4 h-4" />
+                        <span>Update Password & Sign In</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('login');
+                          setLoginEmail(resetEmail);
+                        }}
+                        className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-xs transition"
+                      >
+                        ← Back to Sign In
+                      </button>
+                    </div>
+
+                    <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-start gap-2 mt-2">
+                      <Phone className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                      <span>
+                        Coordinator Syndi Michael (<strong>503-358-2348</strong>) or Brandon can also reset your credentials directly in the Admin Portal.
+                      </span>
+                    </div>
                   </form>
                 )}
               </div>

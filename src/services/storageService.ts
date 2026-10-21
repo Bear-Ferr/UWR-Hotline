@@ -385,6 +385,31 @@ export const storageService = {
     return { success: true, user: found };
   },
 
+  resetPassword(email: string, newPassword: string): { success: boolean; user?: UserAccount; error?: string } {
+    const cleanEmail = email.trim().toLowerCase();
+    const users = this.getUsers();
+    let found = users.find(u => u.email.toLowerCase() === cleanEmail);
+
+    if (!found) {
+      if (cleanEmail.includes('brandon')) {
+        found = DEFAULT_VOLUNTEER_USER;
+      } else if (cleanEmail.includes('syndi')) {
+        found = DEFAULT_ADMIN_USER;
+      }
+    }
+
+    if (!found) {
+      return {
+        success: false,
+        error: 'No volunteer account found with that email address. Please check your spelling.'
+      };
+    }
+
+    const updatedUser: UserAccount = { ...found, password: newPassword };
+    this.updateUser(updatedUser);
+    return { success: true, user: updatedUser };
+  },
+
   updateUserProfile(updated: UserAccount): void {
     const users = this.getUsers().map(u => u.id === updated.id ? updated : u);
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
