@@ -21,7 +21,8 @@ import {
   RefreshCw,
   Building,
   Clock,
-  KeyRound
+  KeyRound,
+  Mail
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -204,22 +205,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
   // Filter Users
   const filteredUsers = users.filter(u => {
+    const term = (userSearchTerm || '').toLowerCase();
     const matchesSearch =
-      u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-      u.city.toLowerCase().includes(userSearchTerm.toLowerCase());
+      (u.name || '').toLowerCase().includes(term) ||
+      (u.email || '').toLowerCase().includes(term) ||
+      (u.city || '').toLowerCase().includes(term);
     const matchesRole = userRoleFilter === 'ALL' || u.role === userRoleFilter;
     return matchesSearch && matchesRole;
   });
 
   // Filter Master Reports
   const filteredReports = reports.filter(r => {
+    const term = (reportSearchTerm || '').toLowerCase();
     const matchesSearch =
-      r.callerName.toLowerCase().includes(reportSearchTerm.toLowerCase()) ||
-      (r.specificSpecies && r.specificSpecies.toLowerCase().includes(reportSearchTerm.toLowerCase())) ||
-      r.speciesCategory.toLowerCase().includes(reportSearchTerm.toLowerCase()) ||
-      r.callerLocation.toLowerCase().includes(reportSearchTerm.toLowerCase()) ||
-      r.userName.toLowerCase().includes(reportSearchTerm.toLowerCase());
+      (r.callerName || '').toLowerCase().includes(term) ||
+      (r.specificSpecies ? r.specificSpecies.toLowerCase().includes(term) : false) ||
+      (r.speciesCategory || '').toLowerCase().includes(term) ||
+      (r.callerLocation || '').toLowerCase().includes(term) ||
+      (r.userName || '').toLowerCase().includes(term);
     
     const matchesOperator = reportOperatorFilter === 'ALL' || r.userName === reportOperatorFilter;
     const matchesStatus = reportStatusFilter === 'ALL' || r.outcomeStatus === reportStatusFilter;

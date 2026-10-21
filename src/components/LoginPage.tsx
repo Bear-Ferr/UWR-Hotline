@@ -292,10 +292,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">Application Submitted!</h3>
                       <p className="text-xs text-gray-600 mt-2 leading-relaxed">
-                        Thank you for applying to volunteer with Umpqua Wildlife Rescue! Your account has been registered and is currently <span className="font-bold text-amber-700">pending approval by Coordinator Syndi Michael</span>.
+                        Thank you for applying to volunteer with Umpqua Wildlife Rescue! Your account has been registered and is currently <span className="font-bold text-amber-700">pending administrator review and approval</span>.
                       </p>
                       <p className="text-xs text-gray-500 mt-2">
-                        Once Syndi approves your account, you will be able to log in with your email and password.
+                        Once an administrator approves your account, you will be able to log in with your email and password.
                       </p>
                     </div>
 
@@ -561,13 +561,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       >
                         ← Back to Sign In
                       </button>
-                    </div>
-
-                    <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-start gap-2 mt-2">
-                      <Phone className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                      <span>
-                        Coordinator Syndi Michael (<strong>503-358-2348</strong>) or Brandon can also reset your credentials directly in the Admin Portal.
-                      </span>
                     </div>
                   </form>
                 )}

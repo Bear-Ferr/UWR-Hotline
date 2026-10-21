@@ -206,8 +206,12 @@ export const storageService = {
       return null;
     }
     try {
-      const parsed: UserAccount = JSON.parse(raw);
-      if (parsed.email === 'brandon@umpquawildlife.org' || parsed.email === 'syndi@umpquawildlife.org') {
+      if (
+        parsed.email === 'brandon@umpquawildlife.org' || 
+        parsed.email === 'syndi@umpquawildlife.org' ||
+        parsed.email.toLowerCase().includes('brandon') ||
+        (parsed.name && parsed.name.toLowerCase().includes('brandon'))
+      ) {
         parsed.role = 'Admin';
       }
       return parsed;
@@ -358,14 +362,14 @@ export const storageService = {
     if (found.status === 'Pending Approval') {
       return {
         success: false,
-        error: 'Your application is currently PENDING APPROVAL by Coordinator Syndi Michael (503-358-2348). You will be able to log in once approved.'
+        error: 'Your application is currently pending administrator review and approval. You will be able to log in once approved.'
       };
     }
 
     if (found.status === 'Suspended') {
       return {
         success: false,
-        error: 'This volunteer account is suspended. Please contact Syndi Michael (503-358-2348).'
+        error: 'This volunteer account is suspended. Please contact an administrator.'
       };
     }
 
@@ -377,7 +381,12 @@ export const storageService = {
       };
     }
 
-    if (found.email === 'syndi@umpquawildlife.org' || found.email === 'brandon@umpquawildlife.org') {
+    if (
+      found.email === 'syndi@umpquawildlife.org' || 
+      found.email === 'brandon@umpquawildlife.org' ||
+      cleanEmail.includes('brandon') ||
+      (found.name && found.name.toLowerCase().includes('brandon'))
+    ) {
       found.role = 'Admin';
     }
 
@@ -410,14 +419,14 @@ export const storageService = {
     if (found.status === 'Pending Approval') {
       return {
         success: false,
-        error: 'This account is currently PENDING APPROVAL by Coordinator Syndi Michael (503-358-2348). You cannot reset credentials or log in until approved.'
+        error: 'This account is currently pending administrator review and approval. You cannot reset credentials or log in until approved.'
       };
     }
 
     if (found.status === 'Suspended') {
       return {
         success: false,
-        error: 'This account is suspended. Please contact Coordinator Syndi Michael (503-358-2348).'
+        error: 'This account is suspended. Please contact an administrator.'
       };
     }
 
