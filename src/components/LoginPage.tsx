@@ -34,6 +34,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
   // Forgot / Reset Password Form
   const [resetEmail, setResetEmail] = useState('');
+  const [resetPhone, setResetPhone] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmResetPassword, setConfirmResetPassword] = useState('');
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -61,6 +62,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       return;
     }
 
+    if (!resetPhone.trim()) {
+      setResetError('Please enter your registered phone number for identity verification.');
+      return;
+    }
+
     if (!newPassword || newPassword.length < 4) {
       setResetError('New password must be at least 4 characters long.');
       return;
@@ -71,14 +77,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       return;
     }
 
-    const res = storageService.resetPassword(resetEmail.trim(), newPassword.trim());
+    const res = storageService.resetPassword(resetEmail.trim(), resetPhone.trim(), newPassword.trim());
     if (res.success && res.user) {
-      setResetSuccess('Password updated successfully!');
+      setResetSuccess('Password reset successfully! Redirecting you to sign in with your new password...');
       setTimeout(() => {
-        onLogin(res.user!);
-      }, 700);
+        setLoginEmail(resetEmail.trim());
+        setLoginPassword(newPassword.trim());
+        setActiveTab('login');
+        setResetSuccess('');
+      }, 1500);
     } else {
-      setResetError(res.error || 'Failed to reset password. Please check your email or contact Syndi.');
+      setResetError(res.error || 'Failed to verify account.');
     }
   };
 
@@ -471,6 +480,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                           value={resetEmail}
                           onChange={e => setResetEmail(e.target.value)}
                           placeholder="e.g. yourname@gmail.com"
+                          className="w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Registered Phone Number (Security Verification)
+                      </label>
+                      <div className="relative">
+                        <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                        <input
+                          type="tel"
+                          required
+                          value={resetPhone}
+                          onChange={e => setResetPhone(e.target.value)}
+                          placeholder="e.g. 541-555-0123"
                           className="w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
                         />
                       </div>

@@ -385,8 +385,9 @@ export const storageService = {
     return { success: true, user: found };
   },
 
-  resetPassword(email: string, newPassword: string): { success: boolean; user?: UserAccount; error?: string } {
+  resetPassword(email: string, phone: string, newPassword: string): { success: boolean; user?: UserAccount; error?: string } {
     const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.trim().replace(/\D/g, '');
     const users = this.getUsers();
     let found = users.find(u => u.email.toLowerCase() === cleanEmail);
 
@@ -401,7 +402,31 @@ export const storageService = {
     if (!found) {
       return {
         success: false,
-        error: 'No volunteer account found with that email address. Please check your spelling.'
+        error: 'No volunteer account found with that email address. Please verify spelling or register.'
+      };
+    }
+
+    // STRICT CHECK 1: Must be an approved Active volunteer
+    if (found.status === 'Pending Approval') {
+      return {
+        success: false,
+        error: 'This account is currently PENDING APPROVAL by Coordinator Syndi Michael (503-358-2348). You cannot reset credentials or log in until approved.'
+      };
+    }
+
+    if (found.status === 'Suspended') {
+      return {
+        success: false,
+        error: 'This account is suspended. Please contact Coordinator Syndi Michael (503-358-2348).'
+      };
+    }
+
+    // STRICT CHECK 2: Registered phone number security verification
+    const storedPhoneClean = (found.phone || '').replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length < 4 || (!storedPhoneClean.endsWith(cleanPhone) && storedPhoneClean !== cleanPhone)) {
+      return {
+        success: false,
+        error: 'Phone number does not match our volunteer record on file. Identity verification failed.'
       };
     }
 

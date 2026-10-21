@@ -20,7 +20,8 @@ import {
   X,
   RefreshCw,
   Building,
-  Clock
+  Clock,
+  KeyRound
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -51,6 +52,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
   // Delete User Confirmation Modal State
   const [userToDelete, setUserToDelete] = useState<UserAccount | null>(null);
+
+  // Admin Reset Password Modal State
+  const [userToResetPassword, setUserToResetPassword] = useState<UserAccount | null>(null);
+  const [adminNewPassword, setAdminNewPassword] = useState('uwr2025');
 
   // Subscribe to real-time report updates
   useEffect(() => {
@@ -124,6 +129,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     if (!userToDelete) return;
     storageService.deleteUser(userToDelete.id);
     setUserToDelete(null);
+    refreshData();
+  };
+
+  const handleAdminResetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userToResetPassword || !adminNewPassword.trim()) return;
+    const updated = { ...userToResetPassword, password: adminNewPassword.trim() };
+    storageService.updateUser(updated);
+    setUserToResetPassword(null);
+    setAdminNewPassword('uwr2025');
     refreshData();
   };
 
@@ -479,7 +494,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                           </button>
                         )}
                       </td>
-                      <td className="p-3 text-right space-x-2">
+                      <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
                         {user.status === 'Pending Approval' && (
                           <button
                             onClick={() => handleApproveUser(user.id, user.role)}
@@ -490,6 +505,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                             <span>Approve</span>
                           </button>
                         )}
+                        <button
+                          onClick={() => {
+                            setUserToResetPassword(user);
+                            setAdminNewPassword('uwr2025');
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition inline-flex items-center"
+                          title={`Reset password for ${user.name}`}
+                        >
+                          <KeyRound className="w-4 h-4 text-amber-600" />
+                        </button>
                         {user.id === currentUser.id ? (
                           <span className="text-[10px] text-gray-400 font-medium italic px-2 py-1">(Active)</span>
                         ) : (
@@ -767,6 +792,60 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 <span>Confirm Delete</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Reset Password Modal */}
+      {userToResetPassword && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-gray-200 space-y-4">
+            <div className="flex items-center space-x-3 text-amber-700">
+              <div className="p-3 bg-amber-100 rounded-xl">
+                <KeyRound className="w-6 h-6 text-amber-800" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-gray-900">Reset Volunteer Password</h3>
+                <p className="text-xs text-gray-500">{userToResetPassword.name}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Set a new password for <strong className="text-gray-900 font-bold">{userToResetPassword.name}</strong> (<span className="font-mono text-gray-700">{userToResetPassword.email}</span>).
+            </p>
+
+            <form onSubmit={handleAdminResetPassword} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  New Password
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={adminNewPassword}
+                  onChange={e => setAdminNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-600 focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t">
+                <button
+                  type="button"
+                  onClick={() => setUserToResetPassword(null)}
+                  className="px-3.5 py-2 border rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-100 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold shadow transition flex items-center space-x-1"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Save New Password</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
