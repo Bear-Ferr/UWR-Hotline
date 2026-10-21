@@ -258,11 +258,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       </div>
                     )}
 
-                    <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-xl text-amber-900 text-[11px] flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>Registration requires review and approval from Coordinator Syndi Michael.</span>
-                    </div>
-
                     <div>
                       <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                         Full Name
