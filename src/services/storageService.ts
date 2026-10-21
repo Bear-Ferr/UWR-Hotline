@@ -165,7 +165,14 @@ export const storageService = {
       return INITIAL_USERS;
     }
     try {
-      return JSON.parse(raw);
+      const parsed: UserAccount[] = JSON.parse(raw);
+      // Ensure initial admin accounts are present
+      INITIAL_USERS.forEach(initUser => {
+        if (!parsed.some(u => u.email.toLowerCase() === initUser.email.toLowerCase())) {
+          parsed.push(initUser);
+        }
+      });
+      return parsed;
     } catch {
       return INITIAL_USERS;
     }
@@ -174,8 +181,8 @@ export const storageService = {
   getCurrentUser(): UserAccount {
     const raw = localStorage.getItem(CURRENT_USER_KEY);
     if (!raw) {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(DEFAULT_VOLUNTEER_USER));
-      return DEFAULT_VOLUNTEER_USER;
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(DEFAULT_ADMIN_USER));
+      return DEFAULT_ADMIN_USER;
     }
     try {
       const parsed: UserAccount = JSON.parse(raw);
@@ -184,7 +191,7 @@ export const storageService = {
       }
       return parsed;
     } catch {
-      return DEFAULT_VOLUNTEER_USER;
+      return DEFAULT_ADMIN_USER;
     }
   },
 
@@ -248,9 +255,23 @@ export const storageService = {
     const users = this.getUsers();
     const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (found) {
+      if (found.email === 'syndi@umpquawildlife.org' || found.email === 'brandon@umpquawildlife.org') {
+        found.role = 'Admin';
+      }
       this.setCurrentUser(found);
       return found;
     }
+    
+    // Fallback if logging in directly as Syndi or Brandon Admin
+    if (email.toLowerCase().includes('syndi')) {
+      this.setCurrentUser(DEFAULT_ADMIN_USER);
+      return DEFAULT_ADMIN_USER;
+    }
+    if (email.toLowerCase().includes('brandon')) {
+      this.setCurrentUser(DEFAULT_VOLUNTEER_USER);
+      return DEFAULT_VOLUNTEER_USER;
+    }
+
     return null;
   },
 

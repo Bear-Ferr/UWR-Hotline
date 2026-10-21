@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { storageService } from '../services/storageService';
 import type { UserAccount } from '../services/storageService';
-import { X, User, Phone, Mail } from 'lucide-react';
+import { X, User, Phone, Mail, ShieldCheck } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -198,32 +198,68 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           {/* MODE: LOGIN */}
           {mode === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-4 text-sm text-gray-800">
-              <div>
-                <label className="block font-medium text-gray-700 mb-1 font-semibold">Registered Email Address</label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="e.g. syndi@umpquawildlife.org"
-                    value={loginEmail}
-                    onChange={e => setLoginEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
+            <div className="space-y-4 text-sm text-gray-800">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div className="text-xs font-bold text-amber-950 mb-1.5 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-amber-600" />
+                  UWR Admin Direct Access:
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Log in to your specific volunteer account.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const admin = storageService.loginUser('syndi@umpquawildlife.org');
+                      if (admin) {
+                        onUserUpdated(admin);
+                        onClose();
+                      }
+                    }}
+                    className="w-full py-1.5 px-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded shadow transition text-center"
+                  >
+                    Syndi Michael (Admin)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const admin = storageService.loginUser('brandon@umpquawildlife.org');
+                      if (admin) {
+                        onUserUpdated(admin);
+                        onClose();
+                      }
+                    }}
+                    className="w-full py-1.5 px-2 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded shadow transition text-center"
+                  >
+                    Brandon (Admin)
+                  </button>
+                </div>
               </div>
 
-              <div className="pt-2 flex justify-end space-x-2">
-                <button
-                  type="submit"
-                  className="w-full py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg font-bold shadow"
-                >
-                  Log In
-                </button>
-              </div>
-            </form>
+              <form onSubmit={handleLogin} className="space-y-3 pt-2 border-t">
+                <div>
+                  <label className="block font-medium text-gray-700 mb-1 font-semibold text-xs">Or Log In with Registered Volunteer Email:</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. brenda@umpquawildlife.org"
+                      value={loginEmail}
+                      onChange={e => setLoginEmail(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    type="submit"
+                    className="w-full py-2 bg-emerald-900 hover:bg-emerald-950 text-white rounded-lg font-bold text-xs shadow"
+                  >
+                    Log In to Account
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
 
           {/* MODE: REGISTER */}
