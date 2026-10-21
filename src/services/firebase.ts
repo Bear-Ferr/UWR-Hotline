@@ -12,6 +12,16 @@ export interface FirebaseConfigKeys {
 
 const CUSTOM_CONFIG_KEY = 'uwr_firebase_custom_config';
 
+// Built-in UWR Hotline Firebase Cloud Configuration (syncs all devices automatically)
+const DEFAULT_FIREBASE_CONFIG: FirebaseConfigKeys = {
+  apiKey: 'AIzaSyCP7XdTIsPcWY6CtdElE04g50Vvi-06EbE',
+  authDomain: 'uwr-hotline.firebaseapp.com',
+  projectId: 'uwr-hotline',
+  storageBucket: 'uwr-hotline.firebasestorage.app',
+  messagingSenderId: '322522249875',
+  appId: '1:322522249875:web:540c308a5d57ead6adab66'
+};
+
 // 1. Check Vite Environment Variables
 const envKeys: Partial<FirebaseConfigKeys> = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -32,13 +42,17 @@ export function getStoredFirebaseConfig(): FirebaseConfigKeys | null {
   const raw = localStorage.getItem(CUSTOM_CONFIG_KEY);
   if (raw) {
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.apiKey && parsed.projectId) {
+        return parsed;
+      }
     } catch {
-      return null;
+      // fall through to default config
     }
   }
 
-  return null;
+  // Priority C: Default Built-in UWR Cloud Config
+  return DEFAULT_FIREBASE_CONFIG;
 }
 
 export function saveStoredFirebaseConfig(config: FirebaseConfigKeys): void {

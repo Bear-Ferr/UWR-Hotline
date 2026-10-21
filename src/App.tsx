@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigation } from './components/Navigation';
 import type { ActiveTab } from './components/Navigation';
 import { DispatchWizard } from './components/DispatchWizard';
@@ -15,6 +15,16 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dispatch');
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => storageService.getCurrentUser());
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  // Global real-time cloud sync for volunteer accounts and rescue reports across all tabs
+  useEffect(() => {
+    const unsubUsers = storageService.subscribeToUsers(() => {});
+    const unsubReports = storageService.subscribeToReports(() => {});
+    return () => {
+      unsubUsers();
+      unsubReports();
+    };
+  }, []);
 
   // Dispatch Pre-fill parameters
   const [dispatchCategory, setDispatchCategory] = useState<string | undefined>(undefined);

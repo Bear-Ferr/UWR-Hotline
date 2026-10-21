@@ -516,21 +516,42 @@ export const storageService = {
           deletedIds = [];
         }
 
+        // Track any cloud deletions so other browsers also remove deleted users
+        let deletedUpdated = false;
+        snapshot.docChanges().forEach(change => {
+          if (change.type === 'removed' && !deletedIds.includes(change.doc.id)) {
+            deletedIds.push(change.doc.id);
+            deletedUpdated = true;
+          }
+        });
+        if (deletedUpdated) {
+          localStorage.setItem(DELETED_USERS_KEY, JSON.stringify(deletedIds));
+        }
+
         const cloudUsers: UserAccount[] = [];
+        const cloudIds = new Set<string>();
         snapshot.forEach(docSnap => {
           const data = docSnap.data() as UserAccount;
           if (data && data.id && !deletedIds.includes(data.id)) {
             cloudUsers.push(data);
+            cloudIds.add(data.id);
           }
         });
 
+        const initialIds = new Set(INITIAL_USERS.map(u => u.id));
         const localUsers = this.getUsers();
         const userMap = new Map<string, UserAccount>();
+
         localUsers.forEach(u => {
           if (!deletedIds.includes(u.id)) {
             userMap.set(u.id, u);
+            // If a volunteer registered locally before cloud sync connected, push their registration to Firestore
+            if (!cloudIds.has(u.id) && !initialIds.has(u.id) && db) {
+              setDoc(doc(db, 'uwr_users', u.id), u).catch(console.error);
+            }
           }
         });
+
         cloudUsers.forEach(u => {
           if (!deletedIds.includes(u.id)) {
             userMap.set(u.id, u);
@@ -539,6 +560,16 @@ export const storageService = {
 
         const mergedUsers = Array.from(userMap.values());
         localStorage.setItem(USERS_KEY, JSON.stringify(mergedUsers));
+
+        // If the currently logged-in user's role or status changed in the cloud, sync it
+        const current = this.getCurrentUser();
+        if (current) {
+          const updatedSelf = userMap.get(current.id);
+          if (updatedSelf) {
+            this.setCurrentUser(updatedSelf);
+          }
+        }
+
         callback(mergedUsers);
       }, err => {
         console.warn('Firestore users subscription fallback:', err);
