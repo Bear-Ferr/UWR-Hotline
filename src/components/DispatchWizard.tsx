@@ -45,6 +45,26 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
     initialSpeciesCategory ||
     'Passerines & Small Songbirds';
 
+  const lowerSpecies = specificSpecies.trim().toLowerCase();
+
+  // Dynamic species circumstance flags based on entered species
+  const isRaccoonSpecies = lowerSpecies.includes('raccoon') || inferredCategory === 'Raccoons';
+  const isPigeonOrDoveSpecies = lowerSpecies.includes('pigeon') || lowerSpecies.includes('dove') || inferredCategory === 'Pigeons & Doves';
+  const isMarineSpecies = lowerSpecies.includes('seal') || lowerSpecies.includes('sea lion') || lowerSpecies.includes('walrus') || lowerSpecies.includes('marine mammal') || lowerSpecies.includes('otter');
+  const isDomesticSpecies = lowerSpecies.includes('cat') || lowerSpecies.includes('dog') || lowerSpecies.includes('chicken') || lowerSpecies.includes('rooster') || lowerSpecies.includes('peacock') || lowerSpecies.includes('parrot') || lowerSpecies.includes('cockatiel') || lowerSpecies.includes('guinea pig') || lowerSpecies.includes('ferret') || lowerSpecies.includes('rock pigeon') || lowerSpecies.includes('exotic');
+
+  // Auto-sync flags when species changes
+  useEffect(() => {
+    setIsSealOrMarine(isMarineSpecies);
+    setIsDomesticOrExotic(isDomesticSpecies);
+    if (!isPigeonOrDoveSpecies) {
+      setIsBandedPigeon(false);
+    }
+    if (!isRaccoonSpecies) {
+      setIsCityRaccoon(false);
+    }
+  }, [specificSpecies, inferredCategory]);
+
   // Sync props when pre-filled from Wildlife ID guide
   useEffect(() => {
     if (initialSpeciesName) {
@@ -282,54 +302,55 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
               </select>
             </div>
 
-            {/* Special Circumstances / Classification Flags */}
-            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-2">
-              <h3 className="font-semibold text-gray-700 text-xs uppercase tracking-wider">
-                Special Circumstances / Special Species
-              </h3>
+            {/* Dynamic Special Circumstances Section - Only shown when relevant to species */}
+            {(isRaccoonSpecies || isPigeonOrDoveSpecies || isMarineSpecies || isDomesticSpecies) && (
+              <div className="bg-amber-50/80 p-3 rounded-lg border border-amber-200 space-y-2 animate-in fade-in">
+                <h3 className="font-semibold text-amber-950 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-amber-700" />
+                  <span>Special Circumstances for {specificSpecies || inferredCategory}</span>
+                </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-medium text-gray-800">
-                <label className="flex items-center space-x-2 bg-white p-2 rounded border hover:bg-gray-100 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isCityRaccoon}
-                    onChange={e => setIsCityRaccoon(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span>Inside City Limits (Raccoon)</span>
-                </label>
+                <div className="space-y-2 text-xs font-medium text-amber-950">
+                  {isRaccoonSpecies && (
+                    <label className="flex items-center space-x-2 bg-white p-2 rounded border border-amber-300 hover:bg-amber-100/50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isCityRaccoon}
+                        onChange={e => setIsCityRaccoon(e.target.checked)}
+                        className="rounded text-amber-600 focus:ring-amber-500"
+                      />
+                      <span>Originates Inside City Limits (Requires Licensed City Permit Rehabber)</span>
+                    </label>
+                  )}
 
-                <label className="flex items-center space-x-2 bg-white p-2 rounded border hover:bg-gray-100 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isBandedPigeon}
-                    onChange={e => setIsBandedPigeon(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span>Banded Pigeon</span>
-                </label>
+                  {isPigeonOrDoveSpecies && (
+                    <label className="flex items-center space-x-2 bg-white p-2 rounded border border-amber-300 hover:bg-amber-100/50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isBandedPigeon}
+                        onChange={e => setIsBandedPigeon(e.target.checked)}
+                        className="rounded text-amber-600 focus:ring-amber-500"
+                      />
+                      <span>Owner Leg Band Present (Banded Racing / Domestic Pigeon)</span>
+                    </label>
+                  )}
 
-                <label className="flex items-center space-x-2 bg-white p-2 rounded border hover:bg-gray-100 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isSealOrMarine}
-                    onChange={e => setIsSealOrMarine(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span>Coastal Seal Call</span>
-                </label>
+                  {isMarineSpecies && (
+                    <div className="flex items-center space-x-2 bg-amber-100 p-2 rounded border border-amber-400 text-amber-950 font-bold">
+                      <ShieldAlert className="w-4 h-4 text-amber-800 shrink-0" />
+                      <span>Coastal Marine Mammal Call (Auto-flagged for Marine Protocol)</span>
+                    </div>
+                  )}
 
-                <label className="flex items-center space-x-2 bg-white p-2 rounded border hover:bg-gray-100 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isDomesticOrExotic}
-                    onChange={e => setIsDomesticOrExotic(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span>Domestic Pet / Exotic</span>
-                </label>
+                  {isDomesticSpecies && (
+                    <div className="flex items-center space-x-2 bg-amber-100 p-2 rounded border border-amber-400 text-amber-950 font-bold">
+                      <AlertTriangle className="w-4 h-4 text-amber-800 shrink-0" />
+                      <span>Domestic Pet / Exotic Animal (Auto-flagged for Animal Control / Saving Grace)</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Hotline Call Notes</label>
