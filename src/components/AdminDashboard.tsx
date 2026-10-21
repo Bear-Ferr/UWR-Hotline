@@ -58,12 +58,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
   const [userToResetPassword, setUserToResetPassword] = useState<UserAccount | null>(null);
   const [adminNewPassword, setAdminNewPassword] = useState('uwr2025');
 
-  // Subscribe to real-time report updates
+  // Subscribe to real-time report and volunteer user updates
   useEffect(() => {
-    const unsub = storageService.subscribeToReports(updatedReports => {
+    const unsubReports = storageService.subscribeToReports(updatedReports => {
       setReports(updatedReports);
     });
-    return () => unsub();
+    const unsubUsers = storageService.subscribeToUsers(updatedUsers => {
+      setUsers(updatedUsers);
+    });
+    return () => {
+      unsubReports();
+      unsubUsers();
+    };
   }, []);
 
   const refreshData = () => {

@@ -502,6 +502,56 @@ export const storageService = {
     return Array.from(map.values());
   },
 
+  subscribeToUsers(callback: (users: UserAccount[]) => void): () => void {
+    if (isFirebaseConfigured && db) {
+      const q = query(collection(db, 'uwr_users'));
+      const unsubscribe = onSnapshot(q, snapshot => {
+        let deletedIds: string[] = [];
+        try {
+          const deletedRaw = localStorage.getItem(DELETED_USERS_KEY);
+          if (deletedRaw) {
+            deletedIds = JSON.parse(deletedRaw);
+          }
+        } catch {
+          deletedIds = [];
+        }
+
+        const cloudUsers: UserAccount[] = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data() as UserAccount;
+          if (data && data.id && !deletedIds.includes(data.id)) {
+            cloudUsers.push(data);
+          }
+        });
+
+        const localUsers = this.getUsers();
+        const userMap = new Map<string, UserAccount>();
+        localUsers.forEach(u => {
+          if (!deletedIds.includes(u.id)) {
+            userMap.set(u.id, u);
+          }
+        });
+        cloudUsers.forEach(u => {
+          if (!deletedIds.includes(u.id)) {
+            userMap.set(u.id, u);
+          }
+        });
+
+        const mergedUsers = Array.from(userMap.values());
+        localStorage.setItem(USERS_KEY, JSON.stringify(mergedUsers));
+        callback(mergedUsers);
+      }, err => {
+        console.warn('Firestore users subscription fallback:', err);
+        callback(this.getUsers());
+      });
+
+      return unsubscribe;
+    }
+
+    callback(this.getUsers());
+    return () => {};
+  },
+
   subscribeToReports(callback: (reports: RescueReport[]) => void): () => void {
     if (isFirebaseConfigured && db) {
       const q = query(collection(db, 'uwr_rescue_reports'));

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
 import type { UserAccount } from '../services/storageService';
 import { 
@@ -25,6 +25,12 @@ interface LoginPageProps {
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>('login');
+
+  // Sync volunteer accounts from cloud on login screen mount
+  useEffect(() => {
+    const unsub = storageService.subscribeToUsers(() => {});
+    return () => unsub();
+  }, []);
   
   // Login Form
   const [loginEmail, setLoginEmail] = useState('');
