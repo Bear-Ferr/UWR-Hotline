@@ -364,19 +364,97 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
             </div>
           </form>
         </div>
+
+        {/* DISPATCH ACTION BAR: SMS COPY, PRINT TICKET, SAVE REPORT */}
+        <div className="bg-white p-4 rounded-xl shadow-md border border-emerald-200 space-y-3">
+          {saveSuccess && (
+            <div className="bg-emerald-700 text-white p-3 rounded-lg shadow flex flex-col sm:flex-row items-center justify-between gap-2 animate-in fade-in">
+              <div className="flex items-center space-x-2 font-semibold text-xs">
+                <CheckCircle className="w-5 h-5 text-amber-300 shrink-0" />
+                <span>Rescue report saved to History!</span>
+              </div>
+              <div className="flex items-center space-x-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleReset();
+                    setSaveSuccess(false);
+                  }}
+                  className="bg-emerald-900 hover:bg-emerald-950 text-white font-bold px-2.5 py-1 rounded text-xs transition"
+                >
+                  New Intake Call
+                </button>
+                {onNavigateToHistory && (
+                  <button
+                    type="button"
+                    onClick={onNavigateToHistory}
+                    className="bg-amber-400 hover:bg-amber-300 text-emerald-950 font-bold px-2.5 py-1 rounded text-xs transition"
+                  >
+                    View in History
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const topRehabber = recommendation.recommendedRehabbers[0]?.rehabber;
+                  const smsText = `[UWR DISPATCH]\nSpecies: ${specificSpecies || category}\nLocation: ${callerLocation === 'Out of Region / Other County' ? externalCounty : callerLocation}\nCaller: ${callerName || 'Anonymous'} (${callerPhone || 'No Phone'})\nCondition: ${physicalCondition} (${ageStage})\nAssigned: ${recommendation.isOutOfRegion ? (recommendation.outOfRegionCenter?.facilityName || 'External Center') : (topRehabber?.name ? `${topRehabber.name} (${topRehabber.primaryPhone})` : 'UWR Hotline')}\nNotes: ${notes || 'None'}`;
+                  navigator.clipboard.writeText(smsText);
+                  alert('📱 SMS Dispatch Script copied to clipboard! You can now paste and text this directly to rehabbers or transport volunteers.');
+                }}
+                className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow transition cursor-pointer"
+              >
+                <span>📱 Copy SMS Dispatch Text</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  window.print();
+                }}
+                className="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow transition cursor-pointer"
+              >
+                <span>🖨️ Print Intake Ticket</span>
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-gray-100">
+              <div className="flex items-center space-x-2 flex-1">
+                <label className="text-xs font-bold text-gray-700 shrink-0">Outcome:</label>
+                <select
+                  value={selectedOutcomeStatus}
+                  onChange={e => setSelectedOutcomeStatus(e.target.value as RescueReport['outcomeStatus'])}
+                  className="w-full text-xs font-semibold px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white"
+                >
+                  <option value="Referred to Rehabber">Referred to Rehabber</option>
+                  <option value="Referred to Carrier">Referred to Carrier</option>
+                  <option value="Referred to ODFW/Police">Referred to ODFW/Police</option>
+                  <option value="Resolved - Left in Place">Resolved - Left in Place</option>
+                  <option value="Pending">Pending Callback</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                form="dispatch-intake-form"
+                onClick={handleSaveReport}
+                className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-4 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow-md transition shrink-0 cursor-pointer"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save Report</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* RIGHT COLUMN: ROUTING RECOMMENDATIONS & DECISION ENGINE (7 cols) */}
       <div className="lg:col-span-7 space-y-6">
-        {/* Save Confirmation Notification */}
-        {saveSuccess && (
-          <div className="bg-emerald-600 text-white p-3.5 rounded-xl shadow-lg flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-            <div className="flex items-center space-x-2 font-semibold text-sm">
-              <CheckCircle className="w-5 h-5 text-amber-300" />
-              <span>Rescue report saved successfully to your Volunteer History!</span>
-            </div>
-          </div>
-        )}
 
         {/* OUT OF REGION / EXTERNAL COUNTY REFERRAL BOX */}
         {recommendation.isOutOfRegion && recommendation.outOfRegionCenter && (
@@ -581,93 +659,6 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
               </li>
             ))}
           </ul>
-        </div>
-
-        {/* DISPATCH ACTION BAR: SMS COPY, PRINT TICKET, SAVE REPORT */}
-        <div className="bg-white p-4 rounded-xl shadow-md border border-emerald-200 space-y-3">
-          {saveSuccess && (
-            <div className="bg-emerald-700 text-white p-3 rounded-lg shadow flex flex-col sm:flex-row items-center justify-between gap-2 animate-in fade-in">
-              <div className="flex items-center space-x-2 font-semibold text-xs">
-                <CheckCircle className="w-5 h-5 text-amber-300 shrink-0" />
-                <span>Rescue report saved successfully to Volunteer History!</span>
-              </div>
-              <div className="flex items-center space-x-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleReset();
-                    setSaveSuccess(false);
-                  }}
-                  className="bg-emerald-900 hover:bg-emerald-950 text-white font-bold px-2.5 py-1 rounded text-xs transition"
-                >
-                  New Intake Call
-                </button>
-                {onNavigateToHistory && (
-                  <button
-                    type="button"
-                    onClick={onNavigateToHistory}
-                    className="bg-amber-400 hover:bg-amber-300 text-emerald-950 font-bold px-2.5 py-1 rounded text-xs transition"
-                  >
-                    View in History
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const topRehabber = recommendation.recommendedRehabbers[0]?.rehabber;
-                  const smsText = `[UWR DISPATCH]\nSpecies: ${specificSpecies || category}\nLocation: ${callerLocation === 'Out of Region / Other County' ? externalCounty : callerLocation}\nCaller: ${callerName || 'Anonymous'} (${callerPhone || 'No Phone'})\nCondition: ${physicalCondition} (${ageStage})\nAssigned: ${recommendation.isOutOfRegion ? (recommendation.outOfRegionCenter?.facilityName || 'External Center') : (topRehabber?.name ? `${topRehabber.name} (${topRehabber.primaryPhone})` : 'UWR Hotline')}\nNotes: ${notes || 'None'}`;
-                  navigator.clipboard.writeText(smsText);
-                  alert('📱 SMS Dispatch Script copied to clipboard! You can now paste and text this directly to rehabbers or transport volunteers.');
-                }}
-                className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3.5 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow transition cursor-pointer"
-              >
-                <span>📱 Copy SMS Dispatch Text</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  window.print();
-                }}
-                className="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3.5 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow transition cursor-pointer"
-              >
-                <span>🖨️ Print Intake Ticket</span>
-              </button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <div className="flex items-center space-x-2">
-                <label className="text-xs font-bold text-gray-700 shrink-0">Outcome:</label>
-                <select
-                  value={selectedOutcomeStatus}
-                  onChange={e => setSelectedOutcomeStatus(e.target.value as RescueReport['outcomeStatus'])}
-                  className="w-full text-xs font-semibold px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white"
-                >
-                  <option value="Referred to Rehabber">Referred to Rehabber</option>
-                  <option value="Referred to Carrier">Referred to Carrier</option>
-                  <option value="Referred to ODFW/Police">Referred to ODFW/Police</option>
-                  <option value="Resolved - Left in Place">Resolved - Left in Place</option>
-                  <option value="Pending">Pending Callback</option>
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                form="dispatch-intake-form"
-                onClick={handleSaveReport}
-                className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-4 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow-md transition shrink-0 cursor-pointer"
-              >
-                <Save className="w-4 h-4" />
-                <span>Save Report</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
