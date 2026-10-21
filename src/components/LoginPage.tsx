@@ -58,17 +58,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
-  const handleQuickLogin = (email: string, password = 'admin') => {
-    setLoginEmail(email);
-    setLoginPassword(password);
-    const res = storageService.loginUser(email, password);
-    if (res.success && res.user) {
-      onLogin(res.user);
-    } else if (res.error) {
-      setLoginError(res.error);
-    }
-  };
-
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setRegError('');
@@ -195,12 +184,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   </div>
 
                   <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        Password
-                      </label>
-                      <span className="text-[11px] text-gray-400">Default: admin / rescue</span>
-                    </div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                      Password
+                    </label>
                     <div className="relative">
                       <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
                       <input
@@ -229,65 +215,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     <span>Enter Dispatch Portal</span>
                   </button>
                 </form>
-
-                {/* Quick Profile Access Pills */}
-                <div className="pt-3 border-t border-gray-100">
-                  <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 text-center">
-                    Quick Access Profiles
-                  </div>
-                  <div className="space-y-1.5">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickLogin('syndi@umpquawildlife.org', 'admin')}
-                      className="w-full p-2.5 rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-100/70 text-left flex items-center justify-between text-xs transition"
-                    >
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-                        <div>
-                          <span className="font-bold text-amber-950">Syndi Michael</span>
-                          <span className="text-[11px] text-amber-800 ml-1.5">syndi@umpquawildlife.org</span>
-                        </div>
-                      </div>
-                      <span className="bg-amber-500 text-emerald-950 font-bold px-2 py-0.5 rounded-full text-[10px]">
-                        Admin
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleQuickLogin('brandon@umpquawildlife.org', 'admin')}
-                      className="w-full p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/60 text-left flex items-center justify-between text-xs transition"
-                    >
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-                        <div>
-                          <span className="font-bold text-emerald-950">Brandon Volunteer</span>
-                          <span className="text-[11px] text-emerald-800 ml-1.5">brandon@umpquawildlife.org</span>
-                        </div>
-                      </div>
-                      <span className="bg-emerald-800 text-white font-bold px-2 py-0.5 rounded-full text-[10px]">
-                        Admin
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleQuickLogin('brenda@umpquawildlife.org', 'rescue')}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-left flex items-center justify-between text-xs transition"
-                    >
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-slate-600 shrink-0" />
-                        <div>
-                          <span className="font-bold text-slate-900">Brenda Weber</span>
-                          <span className="text-[11px] text-slate-500 ml-1.5">brenda@umpquawildlife.org</span>
-                        </div>
-                      </div>
-                      <span className="bg-slate-200 text-slate-800 font-bold px-2 py-0.5 rounded-full text-[10px]">
-                        Rehabber
-                      </span>
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
 
