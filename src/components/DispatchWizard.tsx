@@ -3,7 +3,7 @@ import { evaluateDispatchRouting } from '../services/routingEngine';
 import type { RoutingInput, RoutingRecommendation } from '../services/routingEngine';
 import { storageService } from '../services/storageService';
 import type { RescueReport } from '../services/storageService';
-import { OREGON_COUNTIES, SPECIES_TAXONOMIC_GROUPS, COMMON_SPECIES_SUGGESTIONS } from '../data/uwrData';
+import { OREGON_COUNTIES, COMMON_SPECIES_SUGGESTIONS, getTaxonomicGroupForSpecies } from '../data/uwrData';
 import { Phone, PhoneForwarded, AlertTriangle, ShieldAlert, CheckCircle, Info, Clock, MapPin, User, Save, RefreshCw, Navigation, Building, Sparkles } from 'lucide-react';
 
 interface DispatchWizardProps {
@@ -11,20 +11,21 @@ interface DispatchWizardProps {
   initialSpeciesName?: string;
   onReportSaved: () => void;
   onOpenAIPhotoID?: () => void;
+  onNavigateToHistory?: () => void;
 }
 
 export const DispatchWizard: React.FC<DispatchWizardProps> = ({
   initialSpeciesCategory,
   initialSpeciesName,
   onReportSaved,
-  onOpenAIPhotoID
+  onOpenAIPhotoID,
+  onNavigateToHistory
 }) => {
   // Intake Form State
   const [callerName, setCallerName] = useState('');
   const [callerPhone, setCallerPhone] = useState('');
   const [callerLocation, setCallerLocation] = useState('Roseburg');
   const [externalCounty, setExternalCounty] = useState('Lane County (Eugene/Springfield)');
-  const [category, setCategory] = useState(initialSpeciesCategory || 'Passerine');
   const [specificSpecies, setSpecificSpecies] = useState(initialSpeciesName || '');
   const [ageStage, setAgeStage] = useState<RoutingInput['ageStage']>('Unknown');
   const [physicalCondition, setPhysicalCondition] = useState<RoutingInput['physicalCondition']>('Injured / Sick / Bleeding');
@@ -40,14 +41,21 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [selectedOutcomeStatus, setSelectedOutcomeStatus] = useState<RescueReport['outcomeStatus']>('Referred to Rehabber');
 
+  // Infer taxonomic category directly from species name
+  const inferredCategory = 
+    (specificSpecies && getTaxonomicGroupForSpecies(specificSpecies)) ||
+    initialSpeciesCategory ||
+    'Passerines & Small Songbirds';
+
   // Sync props when pre-filled from Wildlife ID guide
   useEffect(() => {
-    if (initialSpeciesCategory) setCategory(initialSpeciesCategory);
-    if (initialSpeciesName) setSpecificSpecies(initialSpeciesName);
-  }, [initialSpeciesCategory, initialSpeciesName]);
+    if (initialSpeciesName) {
+      setSpecificSpecies(initialSpeciesName);
+    }
+  }, [initialSpeciesName]);
 
   const routingInput: RoutingInput = {
-    category,
+    category: inferredCategory,
     specificSpecies,
     location: callerLocation,
     externalCounty: callerLocation === 'Out of Region / Other County' ? externalCounty : undefined,
@@ -63,29 +71,37 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
   const recommendation: RoutingRecommendation = evaluateDispatchRouting(routingInput);
 
   const handleSaveReport = (e: React.FormEvent) => {
-    e.preventDefault();
-    const topRehabber = recommendation.recommendedRehabbers[0]?.rehabber;
-    const topCarrier = recommendation.recommendedCarriers[0]?.carrier;
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+    try {
+      const topRehabber = recommendation.recommendedRehabbers[0]?.rehabber;
+      const topCarrier = recommendation.recommendedCarriers[0]?.carrier;
 
-    storageService.addReport({
-      callerName: callerName || 'Anonymous Caller',
-      callerPhone: callerPhone || 'Not provided',
-      callerLocation: callerLocation === 'Out of Region / Other County' ? `${externalCounty} (Out of Region)` : callerLocation,
-      speciesCategory: category,
-      specificSpecies: specificSpecies || category,
-      animalCondition: `${physicalCondition} • Age: ${ageStage}`,
-      isCatCaught: physicalCondition === 'Cat Caught / Bite',
-      isProhibited: recommendation.isProhibited || recommendation.isOutOfRegion,
-      assignedRehabberId: topRehabber?.id,
-      assignedRehabberName: recommendation.isOutOfRegion ? recommendation.outOfRegionCenter?.facilityName : topRehabber?.name,
-      assignedCarrierName: topCarrier?.name,
-      outcomeStatus: recommendation.isOutOfRegion ? 'Referred to ODFW/Police' : (recommendation.isProhibited ? 'Referred to ODFW/Police' : selectedOutcomeStatus),
-      notes: notes || 'Call handled via UWR Hotline App.'
-    });
+      storageService.addReport({
+        callerName: callerName || 'Anonymous Caller',
+        callerPhone: callerPhone || 'Not provided',
+        callerLocation: callerLocation === 'Out of Region / Other County' ? `${externalCounty} (Out of Region)` : callerLocation,
+        speciesCategory: inferredCategory,
+        specificSpecies: specificSpecies || inferredCategory,
+        animalCondition: `${physicalCondition} • Age: ${ageStage}`,
+        isCatCaught: physicalCondition === 'Cat Caught / Bite',
+        isProhibited: recommendation.isProhibited || recommendation.isOutOfRegion,
+        assignedRehabberId: topRehabber?.id,
+        assignedRehabberName: recommendation.isOutOfRegion ? recommendation.outOfRegionCenter?.facilityName : topRehabber?.name,
+        assignedCarrierName: topCarrier?.name,
+        outcomeStatus: recommendation.isOutOfRegion ? 'Referred to ODFW/Police' : (recommendation.isProhibited ? 'Referred to ODFW/Police' : selectedOutcomeStatus),
+        notes: notes || 'Call handled via UWR Hotline App.'
+      });
 
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 4000);
-    onReportSaved();
+      setSaveSuccess(true);
+      if (onReportSaved) {
+        onReportSaved();
+      }
+    } catch (err) {
+      console.error('Save report failed:', err);
+      alert('Error saving report: ' + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   const handleReset = () => {
@@ -115,15 +131,16 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
               <h2 className="font-bold text-lg">Hotline Call Intake Form</h2>
             </div>
             <button
+              type="button"
               onClick={handleReset}
-              className="text-xs bg-emerald-800 hover:bg-emerald-700 text-emerald-100 px-2.5 py-1 rounded flex items-center space-x-1"
+              className="text-xs bg-emerald-800 hover:bg-emerald-700 text-emerald-100 px-2.5 py-1 rounded flex items-center space-x-1 cursor-pointer"
             >
               <RefreshCw className="w-3 h-3" />
               <span>Reset</span>
             </button>
           </div>
 
-          <form className="p-5 space-y-4 text-sm">
+          <form id="dispatch-intake-form" onSubmit={handleSaveReport} className="p-5 space-y-4 text-sm">
             {/* Caller Information & Location */}
             <div className="bg-emerald-50/50 p-3.5 rounded-lg border border-emerald-100 space-y-3">
               <h3 className="font-semibold text-emerald-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
@@ -206,20 +223,42 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                 Animal & Species Details
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Taxonomic Group</label>
-                  <select
-                    value={category}
-                    onChange={e => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium text-emerald-900 text-sm"
-                  >
-                    {SPECIES_TAXONOMIC_GROUPS.map(grp => (
-                      <option key={grp} value={grp.split(' (')[0]}>
-                        {grp}
-                      </option>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-medium text-gray-700">
+                      Specific Common Name (Search or Type Any Animal)
+                    </label>
+                    {onOpenAIPhotoID && (
+                      <button
+                        type="button"
+                        onClick={onOpenAIPhotoID}
+                        className="text-[11px] font-bold text-emerald-950 hover:bg-amber-400 flex items-center gap-1 bg-amber-500 px-2 py-0.5 rounded shadow-sm transition"
+                      >
+                        <Sparkles className="w-3 h-3 text-emerald-950" />
+                        <span>Diagnose Photo with AI</span>
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    list="common-species-list"
+                    placeholder="e.g. Turkey Vulture, Banded Pigeon, American Robin, Barn Swallow, Bobcat"
+                    value={specificSpecies}
+                    onChange={e => setSpecificSpecies(e.target.value)}
+                    className="w-full px-3 py-1.5 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm"
+                  />
+                  <datalist id="common-species-list">
+                    {COMMON_SPECIES_SUGGESTIONS.map(spec => (
+                      <option key={spec} value={spec} />
                     ))}
-                  </select>
+                  </datalist>
+                  {specificSpecies && (
+                    <p className="mt-1 text-[11px] font-medium text-emerald-700 flex items-center gap-1">
+                      <span>✓ Matched Category:</span>
+                      <span className="font-bold underline">{inferredCategory}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -235,35 +274,6 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                     <option value="Adult / Older">Adult / Older</option>
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-medium text-gray-700">Specific Common Name (Search or Type Any Animal)</label>
-                  {onOpenAIPhotoID && (
-                    <button
-                      type="button"
-                      onClick={onOpenAIPhotoID}
-                      className="text-[11px] font-bold text-emerald-950 hover:bg-amber-400 flex items-center gap-1 bg-amber-500 px-2 py-0.5 rounded shadow-sm transition"
-                    >
-                      <Sparkles className="w-3 h-3 text-emerald-950" />
-                      <span>Diagnose Photo with AI</span>
-                    </button>
-                  )}
-                </div>
-                <input
-                  type="text"
-                  list="common-species-list"
-                  placeholder="e.g. Turkey Vulture, Banded Pigeon, American Robin, Barn Swallow, Bobcat"
-                  value={specificSpecies}
-                  onChange={e => setSpecificSpecies(e.target.value)}
-                  className="w-full px-3 py-1.5 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm"
-                />
-                <datalist id="common-species-list">
-                  {COMMON_SPECIES_SUGGESTIONS.map(spec => (
-                    <option key={spec} value={spec} />
-                  ))}
-                </datalist>
               </div>
             </div>
 
@@ -567,53 +577,89 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
         </div>
 
         {/* DISPATCH ACTION BAR: SMS COPY, PRINT TICKET, SAVE REPORT */}
-        <div className="bg-white p-4 rounded-xl shadow-md border border-emerald-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <button
-              onClick={() => {
-                const topRehabber = recommendation.recommendedRehabbers[0]?.rehabber;
-                const smsText = `[UWR DISPATCH]\nSpecies: ${specificSpecies || category}\nLocation: ${callerLocation === 'Out of Region / Other County' ? externalCounty : callerLocation}\nCaller: ${callerName || 'Anonymous'} (${callerPhone || 'No Phone'})\nCondition: ${physicalCondition} (${ageStage})\nAssigned: ${recommendation.isOutOfRegion ? (recommendation.outOfRegionCenter?.facilityName || 'External Center') : (topRehabber?.name ? `${topRehabber.name} (${topRehabber.primaryPhone})` : 'UWR Hotline')}\nNotes: ${notes || 'None'}`;
-                navigator.clipboard.writeText(smsText);
-                alert('📱 SMS Dispatch Script copied to clipboard! You can now paste and text this directly to rehabbers or transport volunteers.');
-              }}
-              className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3.5 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow transition"
-            >
-              <span>📱 Copy SMS Dispatch Text</span>
-            </button>
+        <div className="bg-white p-4 rounded-xl shadow-md border border-emerald-200 space-y-3">
+          {saveSuccess && (
+            <div className="bg-emerald-700 text-white p-3 rounded-lg shadow flex flex-col sm:flex-row items-center justify-between gap-2 animate-in fade-in">
+              <div className="flex items-center space-x-2 font-semibold text-xs">
+                <CheckCircle className="w-5 h-5 text-amber-300 shrink-0" />
+                <span>Rescue report saved successfully to Volunteer History!</span>
+              </div>
+              <div className="flex items-center space-x-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleReset();
+                    setSaveSuccess(false);
+                  }}
+                  className="bg-emerald-900 hover:bg-emerald-950 text-white font-bold px-2.5 py-1 rounded text-xs transition"
+                >
+                  New Intake Call
+                </button>
+                {onNavigateToHistory && (
+                  <button
+                    type="button"
+                    onClick={onNavigateToHistory}
+                    className="bg-amber-400 hover:bg-amber-300 text-emerald-950 font-bold px-2.5 py-1 rounded text-xs transition"
+                  >
+                    View in History
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
-            <button
-              onClick={() => {
-                window.print();
-              }}
-              className="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3.5 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow transition"
-            >
-              <span>🖨️ Print Intake Ticket</span>
-            </button>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <div className="flex items-center space-x-2">
-              <label className="text-xs font-bold text-gray-700 shrink-0">Outcome:</label>
-              <select
-                value={selectedOutcomeStatus}
-                onChange={e => setSelectedOutcomeStatus(e.target.value as RescueReport['outcomeStatus'])}
-                className="w-full text-xs font-semibold px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white"
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const topRehabber = recommendation.recommendedRehabbers[0]?.rehabber;
+                  const smsText = `[UWR DISPATCH]\nSpecies: ${specificSpecies || category}\nLocation: ${callerLocation === 'Out of Region / Other County' ? externalCounty : callerLocation}\nCaller: ${callerName || 'Anonymous'} (${callerPhone || 'No Phone'})\nCondition: ${physicalCondition} (${ageStage})\nAssigned: ${recommendation.isOutOfRegion ? (recommendation.outOfRegionCenter?.facilityName || 'External Center') : (topRehabber?.name ? `${topRehabber.name} (${topRehabber.primaryPhone})` : 'UWR Hotline')}\nNotes: ${notes || 'None'}`;
+                  navigator.clipboard.writeText(smsText);
+                  alert('📱 SMS Dispatch Script copied to clipboard! You can now paste and text this directly to rehabbers or transport volunteers.');
+                }}
+                className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3.5 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow transition cursor-pointer"
               >
-                <option value="Referred to Rehabber">Referred to Rehabber</option>
-                <option value="Referred to Carrier">Referred to Carrier</option>
-                <option value="Referred to ODFW/Police">Referred to ODFW/Police</option>
-                <option value="Resolved - Left in Place">Resolved - Left in Place</option>
-                <option value="Pending">Pending Callback</option>
-              </select>
+                <span>📱 Copy SMS Dispatch Text</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  window.print();
+                }}
+                className="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3.5 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow transition cursor-pointer"
+              >
+                <span>🖨️ Print Intake Ticket</span>
+              </button>
             </div>
 
-            <button
-              onClick={handleSaveReport}
-              className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-4 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow-md transition shrink-0"
-            >
-              <Save className="w-4 h-4" />
-              <span>Save Report</span>
-            </button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex items-center space-x-2">
+                <label className="text-xs font-bold text-gray-700 shrink-0">Outcome:</label>
+                <select
+                  value={selectedOutcomeStatus}
+                  onChange={e => setSelectedOutcomeStatus(e.target.value as RescueReport['outcomeStatus'])}
+                  className="w-full text-xs font-semibold px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white"
+                >
+                  <option value="Referred to Rehabber">Referred to Rehabber</option>
+                  <option value="Referred to Carrier">Referred to Carrier</option>
+                  <option value="Referred to ODFW/Police">Referred to ODFW/Police</option>
+                  <option value="Resolved - Left in Place">Resolved - Left in Place</option>
+                  <option value="Pending">Pending Callback</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                form="dispatch-intake-form"
+                onClick={handleSaveReport}
+                className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-4 py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow-md transition shrink-0 cursor-pointer"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save Report</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

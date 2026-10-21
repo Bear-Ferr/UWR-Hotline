@@ -443,3 +443,136 @@ export const COMMON_SPECIES_SUGGESTIONS = [
   'Domestic Dog',
   'Domestic Chicken'
 ];
+
+export function getTaxonomicGroupForSpecies(speciesName: string): string | null {
+  if (!speciesName || !speciesName.trim()) return null;
+  const s = speciesName.toLowerCase().trim();
+
+  // Helper for word boundary matching
+  const hasWord = (word: string) => new RegExp(`\\b${word}\\b`, 'i').test(s);
+
+  // 1. Invertebrates & Insects
+  if (s.includes('caterpillar') || s.includes('butterfly') || hasWord('bee') || hasWord('bees') || s.includes('moth') || s.includes('beetle') || s.includes('dragonfly') || s.includes('spider') || s.includes('insect')) {
+    return 'Invertebrates & Insects';
+  }
+
+  // 2. High-priority multi-word or compound overrides
+  if (s.includes('vulture') || s.includes('condor') || s.includes('scavenger')) return 'Vultures & Scavengers';
+  if (hasWord('bobcat') || s.includes('cougar') || s.includes('coyote') || s.includes('mountain lion') || s.includes('black bear') || s.includes('grizzly')) return 'Large Carnivores & Predators';
+  if (s.includes('squirrel') || s.includes('chipmunk') || s.includes('porcupine') || s.includes('beaver') || s.includes('nutria') || s.includes('gopher') || s.includes('woodchuck') || s.includes('marmot')) return 'Small Mammals & Rodents';
+  if (s.includes('wood duck')) return 'Waterfowl & Ducks';
+  if (s.includes('farm goose') || s.includes('domestic goose') || s.includes('domestic duck')) return 'Domestic Animals & Livestock';
+  if (s.includes('rock pigeon') || s.includes('banded pigeon') || s.includes('racing pigeon') || s.includes('domestic pigeon')) return 'Pigeons & Doves';
+
+  // 3. Hummingbirds
+  if (s.includes('hummingbird') || hasWord('anna') || s.includes('annas') || s.includes("anna's") || hasWord('rufous') || hasWord('calliope')) {
+    return 'Hummingbirds';
+  }
+
+  // 4. Swallows, Martins & Swifts
+  if (s.includes('swallow') || hasWord('martin') || hasWord('martins') || s.includes('swift')) {
+    return 'Swallows, Martins & Swifts';
+  }
+
+  // 5. Pigeons & Doves
+  if (s.includes('pigeon') || s.includes('dove')) {
+    return 'Pigeons & Doves';
+  }
+
+  // 6. Corvids
+  if (hasWord('crow') || hasWord('crows') || hasWord('raven') || hasWord('ravens') || hasWord('jay') || hasWord('jays') || s.includes('magpie') || s.includes('nutcracker') || s.includes('corvid')) {
+    return 'Corvids';
+  }
+
+  // 7. Raptors
+  if (s.includes('hawk') || s.includes('owl') || s.includes('falcon') || s.includes('eagle') || s.includes('kestrel') || s.includes('osprey') || s.includes('harrier') || s.includes('kite') || s.includes('goshawk') || s.includes('screech') || s.includes('merlin') || s.includes('raptor')) {
+    return 'Raptors';
+  }
+
+  // 8. Woodpeckers & Flickers
+  if (s.includes('woodpecker') || s.includes('flicker') || s.includes('sapsucker')) {
+    return 'Woodpeckers & Flickers';
+  }
+
+  // 9. Waterfowl & Ducks
+  if (s.includes('duck') || s.includes('mallard') || s.includes('goose') || s.includes('geese') || s.includes('swan') || s.includes('teal') || s.includes('merganser') || s.includes('pintail') || s.includes('widgeon') || s.includes('bufflehead') || s.includes('waterfowl')) {
+    return 'Waterfowl & Ducks';
+  }
+
+  // 10. Herons, Egrets & Wading Birds
+  if (s.includes('heron') || s.includes('egret') || s.includes('bittern') || s.includes('ibis')) {
+    return 'Herons, Egrets & Wading Birds';
+  }
+
+  // 11. Precocials & Upland Birds
+  if (s.includes('quail') || s.includes('pheasant') || hasWord('turkey') || hasWord('turkeys') || s.includes('grouse') || s.includes('partridge') || s.includes('chuka') || s.includes('precocial')) {
+    return 'Precocials & Upland Birds';
+  }
+
+  // 12. Waterbirds, Rails & Grebes
+  if (s.includes('coot') || s.includes('grebe') || s.includes('loon') || s.includes('cormorant') || s.includes('rail') || s.includes('sora')) {
+    return 'Waterbirds, Rails & Grebes';
+  }
+
+  // 13. Seabirds & Shorebirds
+  if (s.includes('gull') || s.includes('pelican') || s.includes('murre') || s.includes('plover') || s.includes('sandpiper') || s.includes('tern') || s.includes('albatross') || s.includes('killdeer') || s.includes('seabird') || s.includes('shorebird')) {
+    return 'Seabirds & Shorebirds';
+  }
+
+  // 14. Passerines & Small Songbirds
+  if (s.includes('robin') || s.includes('finch') || s.includes('sparrow') || s.includes('junco') || s.includes('thrush') || s.includes('towhee') || s.includes('warbler') || s.includes('chickadee') || s.includes('nuthatch') || s.includes('grosbeak') || s.includes('tanager') || s.includes('starling') || s.includes('wren') || s.includes('bushtit') || s.includes('bluebird') || s.includes('meadowlark') || s.includes('blackbird') || s.includes('oriole') || s.includes('goldfinch') || s.includes('waxwing') || s.includes('vireo') || s.includes('flycatcher') || s.includes('phoebe') || s.includes('pewee') || s.includes('songbird') || s.includes('passerine')) {
+    return 'Passerines & Small Songbirds';
+  }
+
+  // 15. Small Mammals & Rodents
+  if (hasWord('mouse') || hasWord('mice') || hasWord('rat') || hasWord('rats') || s.includes('rodent') || s.includes('mole') || s.includes('shrew') || s.includes('vole')) {
+    return 'Small Mammals & Rodents';
+  }
+
+  // 16. Opossums
+  if (s.includes('opossum') || hasWord('possum')) {
+    return 'Opossums';
+  }
+
+  // 17. Rabbits & Hares
+  if (s.includes('rabbit') || s.includes('hare') || s.includes('cottontail') || s.includes('jackrabbit') || s.includes('pika')) {
+    return 'Rabbits & Hares';
+  }
+
+  // 18. Bats & Insectivores
+  if (hasWord('bat') || hasWord('bats')) {
+    return 'Bats & Insectivores';
+  }
+
+  // 19. Raccoons & RVS
+  if (s.includes('raccoon') || s.includes('skunk')) {
+    return 'Raccoons & RVS';
+  }
+
+  // 20. Large Carnivores & Predators
+  if (hasWord('fox') || hasWord('foxes') || hasWord('bear') || hasWord('bears') || s.includes('lynx') || s.includes('wolf') || s.includes('badger') || s.includes('weasel') || s.includes('otter') || s.includes('marten') || s.includes('fisher')) {
+    return 'Large Carnivores & Predators';
+  }
+
+  // 21. Fawns & Ungulates
+  if (s.includes('fawn') || s.includes('deer') || s.includes('elk') || s.includes('moose') || s.includes('ungulate')) {
+    return 'Fawns & Ungulates';
+  }
+
+  // 22. Herptiles
+  if (s.includes('turtle') || s.includes('lizard') || s.includes('snake') || s.includes('frog') || s.includes('toad') || s.includes('salamander') || s.includes('newt') || s.includes('tortoise') || s.includes('herptile') || s.includes('reptile') || s.includes('amphibian')) {
+    return 'Herptiles';
+  }
+
+  // 23. Exotic & Escaped Birds
+  if (s.includes('parrot') || s.includes('cockatiel') || s.includes('canary') || s.includes('parakeet') || s.includes('macaw') || s.includes('cockatoo') || s.includes('budgie')) {
+    return 'Exotic & Escaped Birds';
+  }
+
+  // 24. Domestic Animals & Livestock
+  if (hasWord('cat') || hasWord('cats') || hasWord('dog') || hasWord('dogs') || hasWord('kitten') || hasWord('kittens') || hasWord('puppy') || hasWord('puppies') || s.includes('chicken') || s.includes('rooster') || hasWord('hen') || hasWord('hens') || s.includes('goat') || s.includes('cow') || s.includes('sheep') || s.includes('pig') || s.includes('horse') || s.includes('domestic')) {
+    return 'Domestic Animals & Livestock';
+  }
+
+  return null;
+}

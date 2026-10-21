@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
 import type { RescueReport, UserAccount } from '../services/storageService';
-import { SPECIES_TAXONOMIC_GROUPS, COMMON_SPECIES_SUGGESTIONS } from '../data/uwrData';
+import { COMMON_SPECIES_SUGGESTIONS, getTaxonomicGroupForSpecies } from '../data/uwrData';
 import { Clock, Search, MapPin, FileText, Download, CheckCircle, ArrowUpRight, ShieldAlert, BarChart3, Edit3, Trash2, X, Save, AlertTriangle } from 'lucide-react';
 
 interface RescueHistoryProps {
@@ -443,20 +443,7 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Taxonomic Category</label>
-                  <select
-                    value={editingReport.speciesCategory}
-                    onChange={e => setEditingReport({ ...editingReport, speciesCategory: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-xs bg-white font-medium"
-                  >
-                    {SPECIES_TAXONOMIC_GROUPS.map(grp => (
-                      <option key={grp} value={grp.split(' (')[0]}>
-                        {grp}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Specific Common Name</label>
@@ -464,7 +451,15 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
                     type="text"
                     list="history-species-list"
                     value={editingReport.specificSpecies || ''}
-                    onChange={e => setEditingReport({ ...editingReport, specificSpecies: e.target.value })}
+                    onChange={e => {
+                      const val = e.target.value;
+                      const autoGroup = getTaxonomicGroupForSpecies(val);
+                      setEditingReport({
+                        ...editingReport,
+                        specificSpecies: val,
+                        speciesCategory: autoGroup || editingReport.speciesCategory
+                      });
+                    }}
                     className="w-full px-3 py-2 border rounded-lg text-xs"
                     placeholder="e.g. Turkey Vulture, Banded Pigeon, Robin, Bobcat"
                   />
@@ -651,20 +646,7 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Taxonomic Category</label>
-                  <select
-                    value={newReport.speciesCategory}
-                    onChange={e => setNewReport({ ...newReport, speciesCategory: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-xs bg-white font-medium"
-                  >
-                    {SPECIES_TAXONOMIC_GROUPS.map(grp => (
-                      <option key={grp} value={grp.split(' (')[0]}>
-                        {grp}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Specific Common Name</label>
@@ -672,7 +654,15 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
                     type="text"
                     list="history-species-list"
                     value={newReport.specificSpecies}
-                    onChange={e => setNewReport({ ...newReport, specificSpecies: e.target.value })}
+                    onChange={e => {
+                      const val = e.target.value;
+                      const autoGroup = getTaxonomicGroupForSpecies(val);
+                      setNewReport({
+                        ...newReport,
+                        specificSpecies: val,
+                        speciesCategory: autoGroup || newReport.speciesCategory
+                      });
+                    }}
                     className="w-full px-3 py-2 border rounded-lg text-xs"
                     placeholder="e.g. Turkey Vulture, Banded Pigeon, Robin, Bobcat"
                   />

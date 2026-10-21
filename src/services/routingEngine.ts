@@ -212,7 +212,17 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
   if (!isProhibited && !isOutOfRegion) {
     REHABBERS.forEach(rehabber => {
       // Check category match
-      const handlesCategory = rehabber.categories.includes(input.category);
+      const handlesCategory = rehabber.categories.some(cat => {
+        const inputCatLower = input.category.toLowerCase();
+        const rehabCatLower = cat.toLowerCase();
+        if (inputCatLower.includes(rehabCatLower) || rehabCatLower.includes(inputCatLower)) return true;
+        if (cat === 'Passerine' && (inputCatLower.includes('passerine') || inputCatLower.includes('songbird') || inputCatLower.includes('swallow') || inputCatLower.includes('hummingbird'))) return true;
+        if (cat === 'Mammals' && (inputCatLower.includes('mammal') || inputCatLower.includes('opossum') || inputCatLower.includes('rabbit') || inputCatLower.includes('bat') || inputCatLower.includes('carnivore') || inputCatLower.includes('rodent'))) return true;
+        if (cat === 'Precocials' && inputCatLower.includes('precocial')) return true;
+        if (cat === 'Fawns/Bears' && (inputCatLower.includes('fawn') || inputCatLower.includes('ungulate'))) return true;
+        if (cat === 'Raccoons' && inputCatLower.includes('raccoon')) return true;
+        return false;
+      });
 
       // Check species match ONLY if specificSpecies is provided
       const handlesSpecies =

@@ -65,6 +65,7 @@ export const App: React.FC = () => {
             initialSpeciesName={dispatchSpecies}
             onReportSaved={() => {}}
             onOpenAIPhotoID={() => setIsAIModalOpen(true)}
+            onNavigateToHistory={() => setActiveTab('history')}
           />
         )}
 

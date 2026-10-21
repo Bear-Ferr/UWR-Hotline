@@ -265,11 +265,17 @@ export const storageService = {
           cloudReports.push(docSnap.data() as RescueReport);
         });
 
-        cloudReports.sort((a, b) => new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime());
+        const localReports = this.getReports();
+        const reportMap = new Map<string, RescueReport>();
+        localReports.forEach(r => reportMap.set(r.id, r));
+        cloudReports.forEach(r => reportMap.set(r.id, r));
 
-        localStorage.setItem(REPORTS_KEY, JSON.stringify(cloudReports));
-        localStorage.setItem(REPORTS_BACKUP_KEY, JSON.stringify(cloudReports));
-        callback(cloudReports);
+        const mergedReports = Array.from(reportMap.values());
+        mergedReports.sort((a, b) => new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime());
+
+        localStorage.setItem(REPORTS_KEY, JSON.stringify(mergedReports));
+        localStorage.setItem(REPORTS_BACKUP_KEY, JSON.stringify(mergedReports));
+        callback(mergedReports);
       }, err => {
         console.warn('Firestore subscription fallback:', err);
         callback(this.getReports());
