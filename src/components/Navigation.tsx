@@ -22,10 +22,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 }) => {
   const isAdminUser = 
     currentUser?.role === 'Admin' || 
-    currentUser?.role === 'Volunteer Coordinator' ||
-    currentUser?.email?.toLowerCase().includes('brandon') ||
-    currentUser?.email?.toLowerCase().includes('syndi') ||
-    (currentUser?.name && currentUser?.name.toLowerCase().includes('brandon'));
+    currentUser?.role === 'Volunteer Coordinator';
 
   return (
     <header className="bg-emerald-900 text-white shadow-md border-b border-emerald-800 sticky top-0 z-40">

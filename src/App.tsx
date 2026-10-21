@@ -18,7 +18,17 @@ export const App: React.FC = () => {
 
   // Global real-time cloud sync for volunteer accounts and rescue reports across all tabs
   useEffect(() => {
-    const unsubUsers = storageService.subscribeToUsers(() => {});
+    const unsubUsers = storageService.subscribeToUsers(updatedUsers => {
+      setCurrentUser(prev => {
+        if (!prev) return null;
+        const latest = updatedUsers.find(u => u.id === prev.id || u.email.toLowerCase() === prev.email.toLowerCase());
+        if (latest && (latest.role !== prev.role || latest.status !== prev.status || latest.name !== prev.name)) {
+          storageService.setCurrentUser(latest);
+          return latest;
+        }
+        return prev;
+      });
+    });
     const unsubReports = storageService.subscribeToReports(() => {});
     return () => {
       unsubUsers();
@@ -50,10 +60,7 @@ export const App: React.FC = () => {
 
   const isAdmin = 
     currentUser.role === 'Admin' || 
-    currentUser.role === 'Volunteer Coordinator' ||
-    currentUser.email.toLowerCase().includes('brandon') ||
-    currentUser.email.toLowerCase().includes('syndi') ||
-    (currentUser.name && currentUser.name.toLowerCase().includes('brandon'));
+    currentUser.role === 'Volunteer Coordinator';
 
   return (
     <div className="min-h-screen bg-slate-100 text-gray-900 font-sans flex flex-col">

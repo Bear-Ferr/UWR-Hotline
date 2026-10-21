@@ -207,11 +207,11 @@ export const storageService = {
     }
     try {
       const parsed: UserAccount = JSON.parse(raw);
+      const emailLower = (parsed.email || '').toLowerCase();
       if (
-        parsed.email === 'brandon@umpquawildlife.org' || 
-        parsed.email === 'syndi@umpquawildlife.org' ||
-        parsed.email.toLowerCase().includes('brandon') ||
-        (parsed.name && parsed.name.toLowerCase().includes('brandon'))
+        emailLower === 'brandonjferreira@gmail.com' ||
+        emailLower === 'brandon@umpquawildlife.org' || 
+        emailLower === 'syndi@umpquawildlife.org'
       ) {
         parsed.role = 'Admin';
       }
@@ -383,10 +383,9 @@ export const storageService = {
     }
 
     if (
-      found.email === 'syndi@umpquawildlife.org' || 
-      found.email === 'brandon@umpquawildlife.org' ||
-      cleanEmail.includes('brandon') ||
-      (found.name && found.name.toLowerCase().includes('brandon'))
+      cleanEmail === 'brandonjferreira@gmail.com' ||
+      cleanEmail === 'brandon@umpquawildlife.org' ||
+      cleanEmail === 'syndi@umpquawildlife.org'
     ) {
       found.role = 'Admin';
     }
