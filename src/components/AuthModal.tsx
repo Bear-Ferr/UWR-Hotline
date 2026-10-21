@@ -163,12 +163,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <select
                     value={role}
                     onChange={e => setRole(e.target.value as UserAccount['role'])}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-semibold"
                   >
+                    <option value="Admin">Admin</option>
+                    <option value="Volunteer Coordinator">Volunteer Coordinator</option>
                     <option value="Hotline Operator">Hotline Operator</option>
                     <option value="Rehabber">Rehabber</option>
                     <option value="Critter Carrier">Critter Carrier</option>
-                    <option value="Volunteer Coordinator">Volunteer Coordinator</option>
                   </select>
                 </div>
 
@@ -202,33 +203,59 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </form>
           )}
 
-          {/* MODE: LOGIN */}
+          {/* MODE: LOGIN / SWITCH ACCOUNT */}
           {mode === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-4 text-sm text-gray-800">
+            <div className="space-y-4 text-sm text-gray-800">
               <div>
-                <label className="block font-medium text-gray-700 mb-1">Volunteer Email Address</label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="brandon@umpquawildlife.org"
-                    value={loginEmail}
-                    onChange={e => setLoginEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
+                <label className="block font-medium text-gray-700 mb-2">Select Active User Account:</label>
+                <div className="space-y-2">
+                  {storageService.getUsers().map(acc => (
+                    <button
+                      key={acc.id}
+                      onClick={() => {
+                        storageService.setCurrentUser(acc);
+                        onUserUpdated(acc);
+                        onClose();
+                      }}
+                      className={`w-full p-3 rounded-lg border text-left flex items-center justify-between transition ${
+                        currentUser.id === acc.id
+                          ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-500'
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div>
+                        <div className="font-bold text-gray-900">{acc.name}</div>
+                        <div className="text-xs text-gray-500">{acc.email} • {acc.city}</div>
+                      </div>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        acc.role === 'Admin' ? 'bg-amber-100 text-amber-900' : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {acc.role}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <div className="pt-2 flex justify-end space-x-2">
-                <button
-                  type="submit"
-                  className="w-full py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg font-medium shadow"
-                >
-                  Log In
-                </button>
-              </div>
-            </form>
+              <form onSubmit={handleLogin} className="pt-2 border-t space-y-3">
+                <label className="block font-medium text-gray-700 text-xs">Or log in by email address:</label>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    placeholder="syndi@umpquawildlife.org"
+                    value={loginEmail}
+                    onChange={e => setLoginEmail(e.target.value)}
+                    className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 text-xs"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg font-bold text-xs shadow"
+                  >
+                    Log In
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
 
           {/* MODE: REGISTER */}
