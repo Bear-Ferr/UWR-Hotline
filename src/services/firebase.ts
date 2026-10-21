@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 
 export interface FirebaseConfigKeys {
   apiKey: string;
@@ -75,15 +75,6 @@ if (isFirebaseConfigured && currentConfig) {
   try {
     appInstance = getApps().length === 0 ? initializeApp(currentConfig) : getApp();
     dbInstance = getFirestore(appInstance);
-
-    // Enable offline persistence for phones & spotty cell coverage in Douglas County
-    enableIndexedDbPersistence(dbInstance).catch(err => {
-      if (err.code === 'failed-precondition') {
-        console.warn('Firebase persistence failed: multiple tabs open');
-      } else if (err.code === 'unimplemented') {
-        console.warn('Firebase persistence unsupported in browser');
-      }
-    });
   } catch (err) {
     console.error('Failed to initialize Firebase:', err);
   }
