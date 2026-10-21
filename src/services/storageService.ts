@@ -206,6 +206,7 @@ export const storageService = {
       return null;
     }
     try {
+      const parsed: UserAccount = JSON.parse(raw);
       if (
         parsed.email === 'brandon@umpquawildlife.org' || 
         parsed.email === 'syndi@umpquawildlife.org' ||
