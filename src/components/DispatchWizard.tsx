@@ -4,13 +4,12 @@ import type { RoutingInput, RoutingRecommendation } from '../services/routingEng
 import { storageService } from '../services/storageService';
 import type { RescueReport } from '../services/storageService';
 import { OREGON_COUNTIES, COMMON_SPECIES_SUGGESTIONS, getTaxonomicGroupForSpecies } from '../data/uwrData';
-import { Phone, PhoneForwarded, AlertTriangle, ShieldAlert, CheckCircle, Info, Clock, MapPin, User, Save, RefreshCw, Navigation, Building, Sparkles } from 'lucide-react';
+import { Phone, PhoneForwarded, AlertTriangle, ShieldAlert, CheckCircle, Info, Clock, MapPin, User, Save, RefreshCw, Navigation, Building } from 'lucide-react';
 
 interface DispatchWizardProps {
   initialSpeciesCategory?: string;
   initialSpeciesName?: string;
   onReportSaved: () => void;
-  onOpenAIPhotoID?: () => void;
   onNavigateToHistory?: () => void;
 }
 
@@ -18,7 +17,6 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
   initialSpeciesCategory,
   initialSpeciesName,
   onReportSaved,
-  onOpenAIPhotoID,
   onNavigateToHistory
 }) => {
   // Intake Form State
@@ -225,21 +223,9 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-medium text-gray-700">
-                      Specific Common Name (Search or Type Any Animal)
-                    </label>
-                    {onOpenAIPhotoID && (
-                      <button
-                        type="button"
-                        onClick={onOpenAIPhotoID}
-                        className="text-[11px] font-bold text-emerald-950 hover:bg-amber-400 flex items-center gap-1 bg-amber-500 px-2 py-0.5 rounded shadow-sm transition"
-                      >
-                        <Sparkles className="w-3 h-3 text-emerald-950" />
-                        <span>Diagnose Photo with AI</span>
-                      </button>
-                    )}
-                  </div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Specific Common Name (Search or Type Any Animal)
+                  </label>
                   <input
                     type="text"
                     list="common-species-list"

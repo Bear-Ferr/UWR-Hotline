@@ -7,7 +7,6 @@ import { WildlifeGuide } from './components/WildlifeGuide';
 import { RescueHistory } from './components/RescueHistory';
 import { KnowledgeBase } from './components/KnowledgeBase';
 import { AuthModal } from './components/AuthModal';
-import { AIPhotoIdentifier } from './components/AIPhotoIdentifier';
 import { storageService } from './services/storageService';
 import type { UserAccount } from './services/storageService';
 
@@ -15,9 +14,8 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dispatch');
   const [currentUser, setCurrentUser] = useState<UserAccount>(() => storageService.getCurrentUser());
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
-  // Dispatch Pre-fill parameters when redirected from Wildlife ID Guide or AI Vision
+  // Dispatch Pre-fill parameters when redirected from Wildlife ID Guide
   const [dispatchCategory, setDispatchCategory] = useState<string | undefined>(undefined);
   const [dispatchSpecies, setDispatchSpecies] = useState<string | undefined>(undefined);
 
@@ -33,18 +31,6 @@ export const App: React.FC = () => {
     setActiveTab('dispatch');
   };
 
-  const handleApplyAIDiagnosis = (diagnosis: {
-    speciesName: string;
-    category: string;
-    ageStage: string;
-    physicalCondition: string;
-    isProhibited: boolean;
-  }) => {
-    setDispatchCategory(diagnosis.category);
-    setDispatchSpecies(diagnosis.speciesName);
-    setActiveTab('dispatch');
-  };
-
   return (
     <div className="min-h-screen bg-slate-100 text-gray-900 font-sans flex flex-col">
       {/* Navigation Header */}
@@ -54,7 +40,6 @@ export const App: React.FC = () => {
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
-        onOpenAIPhotoID={() => setIsAIModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -64,7 +49,6 @@ export const App: React.FC = () => {
             initialSpeciesCategory={dispatchCategory}
             initialSpeciesName={dispatchSpecies}
             onReportSaved={() => {}}
-            onOpenAIPhotoID={() => setIsAIModalOpen(true)}
             onNavigateToHistory={() => setActiveTab('history')}
           />
         )}
@@ -86,13 +70,6 @@ export const App: React.FC = () => {
         onClose={() => setIsAuthOpen(false)}
         currentUser={currentUser}
         onUserUpdated={user => setCurrentUser(user)}
-      />
-
-      {/* AI Photo Identifier Modal */}
-      <AIPhotoIdentifier
-        isOpen={isAIModalOpen}
-        onClose={() => setIsAIModalOpen(false)}
-        onApplyToDispatch={handleApplyAIDiagnosis}
       />
 
       {/* App Footer */}

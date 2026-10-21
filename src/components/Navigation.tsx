@@ -1,5 +1,5 @@
 import React from 'react';
-import { PhoneCall, BookOpen, Search, Clock, UserCheck, ShieldAlert, LogOut, Sparkles } from 'lucide-react';
+import { PhoneCall, BookOpen, Search, Clock, UserCheck, ShieldAlert, LogOut } from 'lucide-react';
 import type { UserAccount } from '../services/storageService';
 import { FirebaseSyncStatus } from './FirebaseSyncStatus';
 
@@ -11,7 +11,6 @@ interface NavigationProps {
   currentUser: UserAccount;
   onOpenAuth: () => void;
   onLogout: () => void;
-  onOpenAIPhotoID?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -19,8 +18,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   setActiveTab,
   currentUser,
   onOpenAuth,
-  onLogout,
-  onOpenAIPhotoID
+  onLogout
 }) => {
   return (
     <header className="bg-emerald-900 text-white shadow-md border-b border-emerald-800 sticky top-0 z-40">
@@ -45,21 +43,9 @@ export const Navigation: React.FC<NavigationProps> = ({
           </div>
         </div>
 
-        {/* User Profile, AI Button, DB Sync & Logout */}
+        {/* User Profile, DB Sync & Logout */}
         <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
           <FirebaseSyncStatus />
-
-          {onOpenAIPhotoID && (
-            <button
-              onClick={onOpenAIPhotoID}
-              className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow flex items-center space-x-1 text-xs sm:text-sm transition"
-              title="Diagnose photo with Gemini AI Vision"
-            >
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">AI Photo ID</span>
-              <span className="sm:hidden">AI ID</span>
-            </button>
-          )}
 
           <button
             onClick={onOpenAuth}
