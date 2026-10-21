@@ -7,12 +7,13 @@ import { RescueHistory } from './components/RescueHistory';
 import { KnowledgeBase } from './components/KnowledgeBase';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AuthModal } from './components/AuthModal';
+import { LoginPage } from './components/LoginPage';
 import { storageService } from './services/storageService';
 import type { UserAccount } from './services/storageService';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dispatch');
-  const [currentUser, setCurrentUser] = useState<UserAccount>(() => storageService.getCurrentUser());
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => storageService.getCurrentUser());
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Dispatch Pre-fill parameters
@@ -20,17 +21,38 @@ export const App: React.FC = () => {
   const [dispatchSpecies, setDispatchSpecies] = useState<string | undefined>(undefined);
 
   const handleLogout = () => {
-    const defaultUser = storageService.getUsers()[0];
-    storageService.setCurrentUser(defaultUser);
-    setCurrentUser(defaultUser);
+    storageService.logout();
+    setCurrentUser(null);
+    setActiveTab('dispatch');
   };
+
+  // If user is not logged in, render the Welcome & Sign In Portal
+  if (!currentUser) {
+    return (
+      <LoginPage
+        onLogin={user => {
+          setCurrentUser(user);
+          setActiveTab('dispatch');
+        }}
+      />
+    );
+  }
+
+  const isAdmin = currentUser.role === 'Admin' || currentUser.role === 'Volunteer Coordinator';
 
   return (
     <div className="min-h-screen bg-slate-100 text-gray-900 font-sans flex flex-col">
       {/* Navigation Header */}
       <Navigation
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={tab => {
+          // Prevent non-admin users from opening the admin tab
+          if (tab === 'admin' && !isAdmin) {
+            setActiveTab('dispatch');
+          } else {
+            setActiveTab(tab);
+          }
+        }}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
@@ -53,7 +75,7 @@ export const App: React.FC = () => {
 
         {activeTab === 'knowledge-base' && <KnowledgeBase />}
 
-        {activeTab === 'admin' && <AdminDashboard currentUser={currentUser} />}
+        {activeTab === 'admin' && isAdmin && <AdminDashboard currentUser={currentUser} />}
       </main>
 
       {/* Auth & Volunteer Profile Modal */}
@@ -62,6 +84,7 @@ export const App: React.FC = () => {
         onClose={() => setIsAuthOpen(false)}
         currentUser={currentUser}
         onUserUpdated={user => setCurrentUser(user)}
+        onLogout={handleLogout}
       />
 
       {/* App Footer */}

@@ -178,11 +178,10 @@ export const storageService = {
     }
   },
 
-  getCurrentUser(): UserAccount {
+  getCurrentUser(): UserAccount | null {
     const raw = localStorage.getItem(CURRENT_USER_KEY);
     if (!raw) {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(DEFAULT_ADMIN_USER));
-      return DEFAULT_ADMIN_USER;
+      return null;
     }
     try {
       const parsed: UserAccount = JSON.parse(raw);
@@ -191,12 +190,20 @@ export const storageService = {
       }
       return parsed;
     } catch {
-      return DEFAULT_ADMIN_USER;
+      return null;
     }
   },
 
-  setCurrentUser(user: UserAccount): void {
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+  setCurrentUser(user: UserAccount | null): void {
+    if (user) {
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(CURRENT_USER_KEY);
+    }
+  },
+
+  logout(): void {
+    localStorage.removeItem(CURRENT_USER_KEY);
   },
 
   registerUser(name: string, email: string, phone: string, role: UserAccount['role'], city: string): UserAccount {
@@ -233,7 +240,7 @@ export const storageService = {
     
     // If updating currently logged in user, update current user state
     const currentUser = this.getCurrentUser();
-    if (currentUser.id === updatedUser.id) {
+    if (currentUser && currentUser.id === updatedUser.id) {
       this.setCurrentUser(updatedUser);
     }
 
@@ -371,9 +378,9 @@ export const storageService = {
     const newReport: RescueReport = {
       ...reportData,
       id: `rep-${Date.now()}`,
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userEmail: currentUser.email,
+      userId: currentUser?.id || 'uwr-vol-anon',
+      userName: currentUser?.name || 'Hotline Dispatcher',
+      userEmail: currentUser?.email || '',
       dateSubmitted: new Date().toLocaleString()
     };
 

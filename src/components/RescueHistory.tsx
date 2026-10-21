@@ -91,17 +91,23 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
     setDeletingReport(null);
   };
 
-  const isAdmin = !currentUser?.role || currentUser?.role === 'Admin' || currentUser?.role === 'Volunteer Coordinator';
+  const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'Volunteer Coordinator';
+  const [adminScope, setAdminScope] = useState<'all' | 'mine'>('all');
 
-  // Outcome Analytics Counters (Shows user reports or falls back to all reports so no history is lost)
-  const filteredByUser = reports.filter(r => 
-    isAdmin ||
-    (currentUser?.id && r.userId === currentUser.id) ||
-    (currentUser?.email && r.userEmail && r.userEmail.toLowerCase() === currentUser.email.toLowerCase()) ||
-    (currentUser?.name && r.userName === currentUser.name)
-  );
-
-  const userReports = filteredByUser.length > 0 ? filteredByUser : reports;
+  // Filter user reports: Strict user isolation for volunteers; scope toggle for Admins
+  const userReports = isAdmin
+    ? (adminScope === 'mine'
+        ? reports.filter(r => 
+            (currentUser?.id && r.userId === currentUser.id) ||
+            (currentUser?.email && r.userEmail && r.userEmail.toLowerCase() === currentUser.email.toLowerCase()) ||
+            (currentUser?.name && r.userName === currentUser.name)
+          )
+        : reports)
+    : reports.filter(r => 
+        (currentUser?.id && r.userId === currentUser.id) ||
+        (currentUser?.email && r.userEmail && r.userEmail.toLowerCase() === currentUser.email.toLowerCase()) ||
+        (currentUser?.name && r.userName === currentUser.name)
+      );
 
   const totalReports = userReports.length;
   const rehabberCount = userReports.filter(r => r.outcomeStatus === 'Referred to Rehabber').length;
@@ -163,11 +169,42 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
             <Clock className="w-6 h-6 text-amber-400" />
-            Volunteer Rescue Report History & ODFW Analytics
+            {isAdmin 
+              ? (adminScope === 'mine' ? 'My Personal Hotline Call Log' : 'Organization Master Rescue Call Log')
+              : 'My Rescue Call History & Personal Log'
+            }
           </h2>
-          <p className="text-xs text-emerald-200 mt-1">
-            Logged in as <span className="font-bold text-amber-300">{currentUser.name}</span> ({currentUser.role}) • {totalReports} Total Calls Logged
-          </p>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-emerald-200 mt-1">
+            <span>
+              Logged in as <span className="font-bold text-amber-300">{currentUser.name}</span> ({currentUser.role}) • {totalReports} Calls
+            </span>
+            {isAdmin && (
+              <div className="inline-flex bg-emerald-950/80 rounded-lg p-0.5 border border-emerald-700">
+                <button
+                  type="button"
+                  onClick={() => setAdminScope('all')}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+                    adminScope === 'all'
+                      ? 'bg-amber-500 text-emerald-950 shadow'
+                      : 'text-emerald-300 hover:text-white'
+                  }`}
+                >
+                  All Org Calls ({reports.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdminScope('mine')}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+                    adminScope === 'mine'
+                      ? 'bg-amber-500 text-emerald-950 shadow'
+                      : 'text-emerald-300 hover:text-white'
+                  }`}
+                >
+                  My Calls Only
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Action Controls */}
@@ -178,19 +215,6 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
           >
             <FileText className="w-3.5 h-3.5" />
             <span>+ Add Call Record</span>
-          </button>
-
-          <button
-            onClick={() => {
-              const restored = storageService.restoreBackup();
-              setReports(restored);
-              alert('Restored standard baseline call logs and synced to Cloud Firestore!');
-            }}
-            className="bg-emerald-800 hover:bg-emerald-700 text-emerald-100 font-bold px-3 py-2 rounded-lg text-xs flex items-center space-x-1 border border-emerald-700 transition"
-            title="Seed baseline call reports into Cloud DB"
-          >
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
-            <span>Seed Baseline Catalog</span>
           </button>
 
           <button
