@@ -46,6 +46,7 @@ const USERS_KEY = 'uwr_app_users_v1';
 const CURRENT_USER_KEY = 'uwr_app_current_user_v1';
 const REPORTS_KEY = 'uwr_app_rescue_reports_v1';
 const REPORTS_BACKUP_KEY = 'uwr_app_rescue_reports_backup_v1';
+const DELETED_USERS_KEY = 'uwr_app_deleted_user_ids_v1';
 
 // Default Admin Coordinator and Volunteer Accounts
 const DEFAULT_ADMIN_USER: UserAccount = {
@@ -163,22 +164,39 @@ export const SAMPLE_REPORTS: RescueReport[] = [
 
 export const storageService = {
   getUsers(): UserAccount[] {
+    let deletedIds: string[] = [];
+    try {
+      const deletedRaw = localStorage.getItem(DELETED_USERS_KEY);
+      if (deletedRaw) {
+        deletedIds = JSON.parse(deletedRaw);
+      }
+    } catch {
+      deletedIds = [];
+    }
+
     const raw = localStorage.getItem(USERS_KEY);
     if (!raw) {
-      localStorage.setItem(USERS_KEY, JSON.stringify(INITIAL_USERS));
-      return INITIAL_USERS;
+      const init = INITIAL_USERS.filter(u => !deletedIds.includes(u.id));
+      localStorage.setItem(USERS_KEY, JSON.stringify(init));
+      return init;
     }
     try {
-      const parsed: UserAccount[] = JSON.parse(raw);
-      // Ensure initial admin accounts are present
+      let parsed: UserAccount[] = JSON.parse(raw);
+      // Filter out any explicitly deleted user IDs
+      parsed = parsed.filter(u => !deletedIds.includes(u.id));
+
+      // Ensure base initial accounts exist ONLY if they haven't been deleted
       INITIAL_USERS.forEach(initUser => {
-        if (!parsed.some(u => u.email.toLowerCase() === initUser.email.toLowerCase())) {
+        if (
+          !deletedIds.includes(initUser.id) &&
+          !parsed.some(u => u.email.toLowerCase() === initUser.email.toLowerCase())
+        ) {
           parsed.push(initUser);
         }
       });
       return parsed;
     } catch {
-      return INITIAL_USERS;
+      return INITIAL_USERS.filter(u => !deletedIds.includes(u.id));
     }
   },
 
@@ -289,8 +307,26 @@ export const storageService = {
   },
 
   deleteUser(userId: string): void {
-    const users = this.getUsers().filter(u => u.id !== userId);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    // Record in permanently deleted IDs list so it is never re-seeded
+    try {
+      const deletedRaw = localStorage.getItem(DELETED_USERS_KEY);
+      const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
+      if (!deletedIds.includes(userId)) {
+        deletedIds.push(userId);
+        localStorage.setItem(DELETED_USERS_KEY, JSON.stringify(deletedIds));
+      }
+    } catch (e) {
+      console.warn('Error saving deleted users list:', e);
+    }
+
+    const currentUsers = this.getUsers().filter(u => u.id !== userId);
+    localStorage.setItem(USERS_KEY, JSON.stringify(currentUsers));
+
+    // If currently logged in as deleted user, log out
+    const currentUser = this.getCurrentUser();
+    if (currentUser && currentUser.id === userId) {
+      this.logout();
+    }
 
     if (isFirebaseConfigured && db) {
       deleteDoc(doc(db, 'uwr_users', userId)).catch(console.error);

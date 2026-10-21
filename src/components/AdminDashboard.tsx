@@ -49,6 +49,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
   const [newUserCity, setNewUserCity] = useState('Roseburg');
   const [newUserRole, setNewUserRole] = useState<UserAccount['role']>('Hotline Operator');
 
+  // Delete User Confirmation Modal State
+  const [userToDelete, setUserToDelete] = useState<UserAccount | null>(null);
+
   // Subscribe to real-time report updates
   useEffect(() => {
     const unsub = storageService.subscribeToReports(updatedReports => {
@@ -109,15 +112,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     refreshData();
   };
 
-  const handleDeleteUser = (userId: string, userName: string) => {
-    if (userId === currentUser.id) {
-      alert("You cannot delete your own active admin account.");
+  const promptDeleteUser = (user: UserAccount) => {
+    if (user.id === currentUser.id) {
+      alert("You cannot delete your own currently logged-in admin account.");
       return;
     }
-    if (window.confirm(`Are you sure you want to remove user "${userName}"?`)) {
-      storageService.deleteUser(userId);
-      refreshData();
-    }
+    setUserToDelete(user);
+  };
+
+  const confirmDeleteUser = () => {
+    if (!userToDelete) return;
+    storageService.deleteUser(userToDelete.id);
+    setUserToDelete(null);
+    refreshData();
   };
 
   const handleReportStatusChange = (reportId: string, newStatus: RescueReport['outcomeStatus']) => {
@@ -365,7 +372,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                         <span>Approve Account</span>
                       </button>
                       <button
-                        onClick={() => handleDeleteUser(applicant.id, applicant.name)}
+                        onClick={() => promptDeleteUser(applicant)}
                         className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold px-2.5 py-1.5 rounded-lg text-xs flex items-center space-x-1 transition"
                         title="Decline application and remove"
                       >
@@ -483,11 +490,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                             <span>Approve</span>
                           </button>
                         )}
-                        {user.id !== currentUser.id && (
+                        {user.id === currentUser.id ? (
+                          <span className="text-[10px] text-gray-400 font-medium italic px-2 py-1">(Active)</span>
+                        ) : (
                           <button
-                            onClick={() => handleDeleteUser(user.id, user.name)}
-                            className="p-1 text-gray-400 hover:text-red-600 rounded transition"
-                            title="Remove Volunteer Account"
+                            onClick={() => promptDeleteUser(user)}
+                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition inline-flex items-center"
+                            title={`Remove volunteer account: ${user.name}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -718,6 +727,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-gray-200 space-y-4">
+            <div className="flex items-center space-x-3 text-red-600">
+              <div className="p-3 bg-red-100 rounded-xl">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-gray-900">Remove Volunteer</h3>
+                <p className="text-xs text-gray-500">Permanent action</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Are you sure you want to permanently remove <strong className="text-gray-900 font-bold">{userToDelete.name}</strong> (<span className="font-mono text-gray-700">{userToDelete.email}</span>)?
+              They will no longer be able to log in or access dispatch tools.
+            </p>
+
+            <div className="flex items-center justify-end space-x-2 pt-2 border-t">
+              <button
+                type="button"
+                onClick={() => setUserToDelete(null)}
+                className="px-3.5 py-2 border rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteUser}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow transition flex items-center space-x-1"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Confirm Delete</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
