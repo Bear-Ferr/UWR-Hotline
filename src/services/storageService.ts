@@ -14,7 +14,8 @@ export interface UserAccount {
   name: string;
   email: string;
   phone: string;
-  role: 'Hotline Operator' | 'Rehabber' | 'Critter Carrier' | 'Volunteer Coordinator';
+  role: 'Hotline Operator' | 'Rehabber' | 'Critter Carrier' | 'Volunteer Coordinator' | 'Admin';
+  status: 'Active' | 'Suspended';
   city: string;
   joinedDate: string;
 }
@@ -23,6 +24,7 @@ export interface RescueReport {
   id: string;
   userId: string;
   userName: string;
+  userEmail?: string;
   dateSubmitted: string;
   callerName: string;
   callerPhone: string;
@@ -39,21 +41,46 @@ export interface RescueReport {
   notes: string;
 }
 
-const USERS_KEY = 'uwr_app_users_v1';
-const CURRENT_USER_KEY = 'uwr_app_current_user_v1';
+const USERS_KEY = 'uwr_app_users_v2';
+const CURRENT_USER_KEY = 'uwr_app_current_user_v2';
 const REPORTS_KEY = 'uwr_app_rescue_reports_v1';
 const REPORTS_BACKUP_KEY = 'uwr_app_rescue_reports_backup_v1';
 
-// Initial default demo user
-const DEFAULT_USER: UserAccount = {
+// Default Admin Coordinator and Volunteer Accounts
+const DEFAULT_ADMIN_USER: UserAccount = {
+  id: 'uwr-admin-101',
+  name: 'Syndi Michael',
+  email: 'syndi@umpquawildlife.org',
+  phone: '503-358-2348',
+  role: 'Admin',
+  status: 'Active',
+  city: 'Roseburg',
+  joinedDate: '2024-01-15'
+};
+
+const DEFAULT_VOLUNTEER_USER: UserAccount = {
   id: 'uwr-vol-101',
   name: 'Brandon Volunteer',
   email: 'brandon@umpquawildlife.org',
   phone: '541-499-4281',
   role: 'Hotline Operator',
+  status: 'Active',
   city: 'Roseburg',
-  joinedDate: new Date().toISOString().split('T')[0]
+  joinedDate: '2025-03-01'
 };
+
+const DEFAULT_REHABBER_USER: UserAccount = {
+  id: 'uwr-vol-102',
+  name: 'Brenda Weber',
+  email: 'brenda@umpquawildlife.org',
+  phone: '541-679-0000',
+  role: 'Rehabber',
+  status: 'Active',
+  city: 'Glide',
+  joinedDate: '2024-06-10'
+};
+
+const INITIAL_USERS: UserAccount[] = [DEFAULT_ADMIN_USER, DEFAULT_VOLUNTEER_USER, DEFAULT_REHABBER_USER];
 
 // Expanded baseline sample reports catalog
 export const SAMPLE_REPORTS: RescueReport[] = [
@@ -133,27 +160,26 @@ export const storageService = {
   getUsers(): UserAccount[] {
     const raw = localStorage.getItem(USERS_KEY);
     if (!raw) {
-      const initial = [DEFAULT_USER];
-      localStorage.setItem(USERS_KEY, JSON.stringify(initial));
-      return initial;
+      localStorage.setItem(USERS_KEY, JSON.stringify(INITIAL_USERS));
+      return INITIAL_USERS;
     }
     try {
       return JSON.parse(raw);
     } catch {
-      return [DEFAULT_USER];
+      return INITIAL_USERS;
     }
   },
 
   getCurrentUser(): UserAccount {
     const raw = localStorage.getItem(CURRENT_USER_KEY);
     if (!raw) {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(DEFAULT_USER));
-      return DEFAULT_USER;
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(DEFAULT_ADMIN_USER));
+      return DEFAULT_ADMIN_USER;
     }
     try {
       return JSON.parse(raw);
     } catch {
-      return DEFAULT_USER;
+      return DEFAULT_ADMIN_USER;
     }
   },
 
@@ -174,6 +200,7 @@ export const storageService = {
       email,
       phone,
       role,
+      status: 'Active',
       city,
       joinedDate: new Date().toISOString().split('T')[0]
     };
@@ -186,6 +213,30 @@ export const storageService = {
     }
 
     return newUser;
+  },
+
+  updateUser(updatedUser: UserAccount): void {
+    const users = this.getUsers().map(u => u.id === updatedUser.id ? updatedUser : u);
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    
+    // If updating currently logged in user, update current user state
+    const currentUser = this.getCurrentUser();
+    if (currentUser.id === updatedUser.id) {
+      this.setCurrentUser(updatedUser);
+    }
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'uwr_users', updatedUser.id), updatedUser, { merge: true }).catch(console.error);
+    }
+  },
+
+  deleteUser(userId: string): void {
+    const users = this.getUsers().filter(u => u.id !== userId);
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+    if (isFirebaseConfigured && db) {
+      deleteDoc(doc(db, 'uwr_users', userId)).catch(console.error);
+    }
   },
 
   loginUser(email: string): UserAccount | null {
@@ -288,7 +339,7 @@ export const storageService = {
     return () => {};
   },
 
-  addReport(reportData: Omit<RescueReport, 'id' | 'userId' | 'userName' | 'dateSubmitted'>): RescueReport {
+  addReport(reportData: Omit<RescueReport, 'id' | 'userId' | 'userName' | 'userEmail' | 'dateSubmitted'>): RescueReport {
     const currentUser = this.getCurrentUser();
     const reports = this.getReports();
     const newReport: RescueReport = {
@@ -296,6 +347,7 @@ export const storageService = {
       id: `rep-${Date.now()}`,
       userId: currentUser.id,
       userName: currentUser.name,
+      userEmail: currentUser.email,
       dateSubmitted: new Date().toLocaleString()
     };
 
@@ -353,7 +405,15 @@ export const storageService = {
     return all;
   },
 
-  getUserReports(userId: string): RescueReport[] {
-    return this.getReports();
+  getUserReports(user: UserAccount): RescueReport[] {
+    const all = this.getReports();
+    if (user.role === 'Admin' || user.role === 'Volunteer Coordinator') {
+      return all;
+    }
+    return all.filter(
+      r => r.userId === user.id ||
+      (r.userEmail && user.email && r.userEmail.toLowerCase() === user.email.toLowerCase()) ||
+      r.userName === user.name
+    );
   }
 };

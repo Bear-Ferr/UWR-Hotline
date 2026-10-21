@@ -5,6 +5,7 @@ import { DispatchWizard } from './components/DispatchWizard';
 import { DirectoryView } from './components/DirectoryView';
 import { RescueHistory } from './components/RescueHistory';
 import { KnowledgeBase } from './components/KnowledgeBase';
+import { AdminDashboard } from './components/AdminDashboard';
 import { AuthModal } from './components/AuthModal';
 import { storageService } from './services/storageService';
 import type { UserAccount } from './services/storageService';
@@ -51,6 +52,8 @@ export const App: React.FC = () => {
         {activeTab === 'history' && <RescueHistory currentUser={currentUser} />}
 
         {activeTab === 'knowledge-base' && <KnowledgeBase />}
+
+        {activeTab === 'admin' && <AdminDashboard currentUser={currentUser} />}
       </main>
 
       {/* Auth & Volunteer Profile Modal */}

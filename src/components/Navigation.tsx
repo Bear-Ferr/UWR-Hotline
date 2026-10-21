@@ -1,9 +1,9 @@
 import React from 'react';
-import { PhoneCall, BookOpen, Clock, UserCheck, ShieldAlert, LogOut } from 'lucide-react';
+import { PhoneCall, BookOpen, Clock, UserCheck, ShieldAlert, LogOut, ShieldCheck } from 'lucide-react';
 import type { UserAccount } from '../services/storageService';
 import { FirebaseSyncStatus } from './FirebaseSyncStatus';
 
-export type ActiveTab = 'dispatch' | 'directory' | 'history' | 'knowledge-base';
+export type ActiveTab = 'dispatch' | 'directory' | 'history' | 'knowledge-base' | 'admin';
 
 interface NavigationProps {
   activeTab: ActiveTab;
@@ -20,6 +20,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenAuth,
   onLogout
 }) => {
+  const isAdminUser = currentUser.role === 'Admin' || currentUser.role === 'Volunteer Coordinator';
+
   return (
     <header className="bg-emerald-900 text-white shadow-md border-b border-emerald-800 sticky top-0 z-40">
       {/* Top Banner */}
@@ -54,7 +56,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
             <div className="text-left max-w-[80px] sm:max-w-none truncate">
               <div className="font-semibold text-[11px] sm:text-xs leading-none text-white truncate">{currentUser.name}</div>
-              <div className="text-[9px] sm:text-[10px] text-emerald-300 leading-tight truncate">{currentUser.role}</div>
+              <div className="text-[9px] sm:text-[10px] text-amber-300 font-bold leading-tight truncate">{currentUser.role}</div>
             </div>
           </button>
 
@@ -95,8 +97,6 @@ export const Navigation: React.FC<NavigationProps> = ({
             <span>Directory</span>
           </button>
 
-
-
           <button
             onClick={() => setActiveTab('history')}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-medium text-xs sm:text-sm transition whitespace-nowrap shrink-0 ${
@@ -120,6 +120,20 @@ export const Navigation: React.FC<NavigationProps> = ({
             <ShieldAlert className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Rules & Manual</span>
           </button>
+
+          {isAdminUser && (
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-medium text-xs sm:text-sm transition whitespace-nowrap shrink-0 ${
+                activeTab === 'admin'
+                  ? 'bg-amber-500 text-emerald-950 font-extrabold shadow ring-2 ring-amber-300'
+                  : 'text-amber-300 hover:bg-emerald-900 hover:text-white font-bold'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+              <span>Admin Portal</span>
+            </button>
+          )}
         </div>
       </nav>
     </header>

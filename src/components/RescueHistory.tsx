@@ -91,14 +91,23 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
     setDeletingReport(null);
   };
 
-  // Outcome Analytics Counters
-  const totalReports = reports.length;
-  const rehabberCount = reports.filter(r => r.outcomeStatus === 'Referred to Rehabber').length;
-  const carrierCount = reports.filter(r => r.outcomeStatus === 'Referred to Carrier').length;
-  const odfwPoliceCount = reports.filter(r => r.outcomeStatus === 'Referred to ODFW/Police').length;
-  const leftInPlaceCount = reports.filter(r => r.outcomeStatus === 'Resolved - Left in Place').length;
+  const isAdmin = currentUser.role === 'Admin' || currentUser.role === 'Volunteer Coordinator';
 
-  const filteredReports = reports.filter(r => {
+  // Outcome Analytics Counters
+  const userReports = reports.filter(r => 
+    isAdmin ||
+    r.userId === currentUser.id ||
+    (r.userEmail && r.userEmail.toLowerCase() === currentUser.email.toLowerCase()) ||
+    r.userName === currentUser.name
+  );
+
+  const totalReports = userReports.length;
+  const rehabberCount = userReports.filter(r => r.outcomeStatus === 'Referred to Rehabber').length;
+  const carrierCount = userReports.filter(r => r.outcomeStatus === 'Referred to Carrier').length;
+  const odfwPoliceCount = userReports.filter(r => r.outcomeStatus === 'Referred to ODFW/Police').length;
+  const leftInPlaceCount = userReports.filter(r => r.outcomeStatus === 'Resolved - Left in Place').length;
+
+  const filteredReports = userReports.filter(r => {
     const matchesFilter = selectedOutcomeFilter === 'All' || r.outcomeStatus === selectedOutcomeFilter;
     const term = searchTerm.toLowerCase();
     const matchesSearch =
