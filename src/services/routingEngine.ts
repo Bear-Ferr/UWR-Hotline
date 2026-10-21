@@ -142,21 +142,48 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
   // 7. Check Non-Native / Prohibited Mammals and Birds
   const hasSpecificSpecies = Boolean(input.specificSpecies && input.specificSpecies.trim().length > 0);
   const lowerSpecies = hasSpecificSpecies ? input.specificSpecies!.trim().toLowerCase() : '';
+  const inputCategoryLower = (input.category || '').toLowerCase();
 
-  const isNonNative =
-    hasSpecificSpecies &&
-    (lowerSpecies.includes('opossum') ||
-      lowerSpecies.includes('nutria') ||
-      lowerSpecies.includes('fox squirrel') ||
-      lowerSpecies.includes('starling') ||
-      lowerSpecies.includes('sparrow') ||
-      lowerSpecies.includes('collared dove') ||
-      lowerSpecies.includes('coyote') ||
-      lowerSpecies.includes('cougar'));
+  const isOpossum =
+    inputCategoryLower.includes('opossum') ||
+    inputCategoryLower.includes('possum') ||
+    lowerSpecies.includes('possum') ||
+    lowerSpecies.includes('opossum');
+
+  const isNutria = lowerSpecies.includes('nutria') || lowerSpecies.includes('coypu');
+  const isFoxSquirrel = lowerSpecies.includes('fox squirrel');
+  const isInvasiveBird =
+    lowerSpecies.includes('starling') ||
+    lowerSpecies.includes('house sparrow') ||
+    lowerSpecies.includes('english sparrow') ||
+    lowerSpecies.includes('collared dove') ||
+    lowerSpecies.includes('eurasian collared dove');
+  const isCoyoteCougar =
+    lowerSpecies.includes('coyote') ||
+    lowerSpecies.includes('cougar') ||
+    lowerSpecies.includes('mountain lion') ||
+    lowerSpecies.includes('puma');
+
+  const isNonNative = isOpossum || isNutria || isFoxSquirrel || isInvasiveBird || isCoyoteCougar;
 
   if (isNonNative) {
     isProhibited = true;
-    prohibitedTitle = 'Non-Native or State Prohibited Species';
+    if (isOpossum) {
+      prohibitedTitle = 'Virginia Opossum (PROHIBITED NON-NATIVE)';
+      criticalAlerts.push(
+        'PROHIBITED SPECIES WARNING: Virginia Opossums are non-native in Oregon. State regulations strictly forbid UWR volunteers and rehabbers from accepting or rehabilitating opossums. Refer caller to ODFW Roseburg Office (541-440-3353) or F5 Wildlife Control (541-972-0726).'
+      );
+    } else if (isCoyoteCougar) {
+      prohibitedTitle = 'Coyote / Cougar (PROHIBITED SPECIES)';
+      criticalAlerts.push(
+        'PROHIBITED SPECIES: Coyotes and Cougars cannot be accepted by UWR volunteers. Refer caller directly to ODFW Roseburg (541-440-3353) or Oregon State Police Dispatch (1-800-442-2068).'
+      );
+    } else {
+      prohibitedTitle = 'Non-Native / Invasive Species (PROHIBITED)';
+      criticalAlerts.push(
+        'NON-NATIVE SPECIES WARNING: State regulations prohibit UWR from rehabilitating non-native species (Opossums, Nutria, Fox Squirrels, Starlings, House Sparrows, Collared Doves). Refer caller to ODFW Roseburg (541-440-3353).'
+      );
+    }
     const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'non-native-species');
     if (rule) policyWarnings.push(rule);
     addOfficialReferral('odfw-roseburg');
@@ -217,7 +244,7 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
         const rehabCatLower = cat.toLowerCase();
         if (inputCatLower.includes(rehabCatLower) || rehabCatLower.includes(inputCatLower)) return true;
         if (cat === 'Passerine' && (inputCatLower.includes('passerine') || inputCatLower.includes('songbird') || inputCatLower.includes('swallow') || inputCatLower.includes('hummingbird'))) return true;
-        if (cat === 'Mammals' && (inputCatLower.includes('mammal') || inputCatLower.includes('opossum') || inputCatLower.includes('rabbit') || inputCatLower.includes('bat') || inputCatLower.includes('carnivore') || inputCatLower.includes('rodent'))) return true;
+        if (cat === 'Mammals' && (inputCatLower.includes('mammal') || inputCatLower.includes('rabbit') || inputCatLower.includes('bat') || inputCatLower.includes('carnivore') || inputCatLower.includes('rodent'))) return true;
         if (cat === 'Precocials' && inputCatLower.includes('precocial')) return true;
         if (cat === 'Fawns/Bears' && (inputCatLower.includes('fawn') || inputCatLower.includes('ungulate'))) return true;
         if (cat === 'Raccoons' && inputCatLower.includes('raccoon')) return true;
