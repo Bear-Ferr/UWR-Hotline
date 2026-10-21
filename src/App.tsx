@@ -3,7 +3,6 @@ import { Navigation } from './components/Navigation';
 import type { ActiveTab } from './components/Navigation';
 import { DispatchWizard } from './components/DispatchWizard';
 import { DirectoryView } from './components/DirectoryView';
-import { WildlifeGuide } from './components/WildlifeGuide';
 import { RescueHistory } from './components/RescueHistory';
 import { KnowledgeBase } from './components/KnowledgeBase';
 import { AuthModal } from './components/AuthModal';
@@ -15,7 +14,7 @@ export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<UserAccount>(() => storageService.getCurrentUser());
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // Dispatch Pre-fill parameters when redirected from Wildlife ID Guide
+  // Dispatch Pre-fill parameters
   const [dispatchCategory, setDispatchCategory] = useState<string | undefined>(undefined);
   const [dispatchSpecies, setDispatchSpecies] = useState<string | undefined>(undefined);
 
@@ -23,12 +22,6 @@ export const App: React.FC = () => {
     const defaultUser = storageService.getUsers()[0];
     storageService.setCurrentUser(defaultUser);
     setCurrentUser(defaultUser);
-  };
-
-  const handleSelectSpeciesForDispatch = (category: string, speciesName: string) => {
-    setDispatchCategory(category);
-    setDispatchSpecies(speciesName);
-    setActiveTab('dispatch');
   };
 
   return (
@@ -54,10 +47,6 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'directory' && <DirectoryView />}
-
-        {activeTab === 'wildlife-guide' && (
-          <WildlifeGuide onSelectSpeciesForDispatch={handleSelectSpeciesForDispatch} />
-        )}
 
         {activeTab === 'history' && <RescueHistory currentUser={currentUser} />}
 

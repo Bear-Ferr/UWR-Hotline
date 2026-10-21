@@ -1,9 +1,9 @@
 import React from 'react';
-import { PhoneCall, BookOpen, Search, Clock, UserCheck, ShieldAlert, LogOut } from 'lucide-react';
+import { PhoneCall, BookOpen, Clock, UserCheck, ShieldAlert, LogOut } from 'lucide-react';
 import type { UserAccount } from '../services/storageService';
 import { FirebaseSyncStatus } from './FirebaseSyncStatus';
 
-export type ActiveTab = 'dispatch' | 'directory' | 'wildlife-guide' | 'history' | 'knowledge-base';
+export type ActiveTab = 'dispatch' | 'directory' | 'history' | 'knowledge-base';
 
 interface NavigationProps {
   activeTab: ActiveTab;
@@ -95,17 +95,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <span>Directory</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('wildlife-guide')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-medium text-xs sm:text-sm transition whitespace-nowrap shrink-0 ${
-              activeTab === 'wildlife-guide'
-                ? 'bg-amber-500 text-emerald-950 font-bold shadow'
-                : 'text-emerald-200 hover:bg-emerald-900 hover:text-white'
-            }`}
-          >
-            <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Wildlife ID</span>
-          </button>
+
 
           <button
             onClick={() => setActiveTab('history')}
