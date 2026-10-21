@@ -95,7 +95,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             onClick={() => setMode('login')}
             className={`flex-1 py-2 text-center border-b-2 ${mode === 'login' ? 'border-amber-500 text-emerald-950 font-bold bg-white' : 'border-transparent text-emerald-700'}`}
           >
-            Switch Account
+            Log In
           </button>
           <button
             onClick={() => setMode('register')}
@@ -159,18 +159,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Role / Capacity</label>
-                  <select
-                    value={role}
-                    onChange={e => setRole(e.target.value as UserAccount['role'])}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-semibold"
-                  >
-                    <option value="Admin">Admin</option>
-                    <option value="Volunteer Coordinator">Volunteer Coordinator</option>
-                    <option value="Hotline Operator">Hotline Operator</option>
-                    <option value="Rehabber">Rehabber</option>
-                    <option value="Critter Carrier">Critter Carrier</option>
-                  </select>
+                  <label className="block font-medium text-gray-700 mb-1">Assigned Role</label>
+                  <div className="px-3 py-2 border rounded-lg bg-gray-100 font-bold text-gray-800 text-xs">
+                    {currentUser.role}
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">Managed by UWR Admin</p>
                 </div>
 
                 <div>
@@ -203,59 +196,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </form>
           )}
 
-          {/* MODE: LOGIN / SWITCH ACCOUNT */}
+          {/* MODE: LOGIN */}
           {mode === 'login' && (
-            <div className="space-y-4 text-sm text-gray-800">
+            <form onSubmit={handleLogin} className="space-y-4 text-sm text-gray-800">
               <div>
-                <label className="block font-medium text-gray-700 mb-2">Select Active User Account:</label>
-                <div className="space-y-2">
-                  {storageService.getUsers().map(acc => (
-                    <button
-                      key={acc.id}
-                      onClick={() => {
-                        storageService.setCurrentUser(acc);
-                        onUserUpdated(acc);
-                        onClose();
-                      }}
-                      className={`w-full p-3 rounded-lg border text-left flex items-center justify-between transition ${
-                        currentUser.id === acc.id
-                          ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-500'
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div>
-                        <div className="font-bold text-gray-900">{acc.name}</div>
-                        <div className="text-xs text-gray-500">{acc.email} • {acc.city}</div>
-                      </div>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        acc.role === 'Admin' ? 'bg-amber-100 text-amber-900' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {acc.role}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <form onSubmit={handleLogin} className="pt-2 border-t space-y-3">
-                <label className="block font-medium text-gray-700 text-xs">Or log in by email address:</label>
-                <div className="flex gap-2">
+                <label className="block font-medium text-gray-700 mb-1 font-semibold">Registered Email Address</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
                   <input
                     type="email"
-                    placeholder="syndi@umpquawildlife.org"
+                    required
+                    placeholder="e.g. syndi@umpquawildlife.org"
                     value={loginEmail}
                     onChange={e => setLoginEmail(e.target.value)}
-                    className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 text-xs"
+                    className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg font-bold text-xs shadow"
-                  >
-                    Log In
-                  </button>
                 </div>
-              </form>
-            </div>
+                <p className="text-xs text-gray-500 mt-1">Log in to your specific volunteer account.</p>
+              </div>
+
+              <div className="pt-2 flex justify-end space-x-2">
+                <button
+                  type="submit"
+                  className="w-full py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg font-bold shadow"
+                >
+                  Log In
+                </button>
+              </div>
+            </form>
           )}
 
           {/* MODE: REGISTER */}

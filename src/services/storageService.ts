@@ -63,7 +63,7 @@ const DEFAULT_VOLUNTEER_USER: UserAccount = {
   name: 'Brandon Volunteer',
   email: 'brandon@umpquawildlife.org',
   phone: '541-499-4281',
-  role: 'Hotline Operator',
+  role: 'Admin',
   status: 'Active',
   city: 'Roseburg',
   joinedDate: '2025-03-01'
@@ -80,7 +80,7 @@ const DEFAULT_REHABBER_USER: UserAccount = {
   joinedDate: '2024-06-10'
 };
 
-const DEFAULT_USER = DEFAULT_ADMIN_USER;
+const DEFAULT_USER = DEFAULT_VOLUNTEER_USER;
 const INITIAL_USERS: UserAccount[] = [DEFAULT_ADMIN_USER, DEFAULT_VOLUNTEER_USER, DEFAULT_REHABBER_USER];
 
 // Expanded baseline sample reports catalog
@@ -174,13 +174,17 @@ export const storageService = {
   getCurrentUser(): UserAccount {
     const raw = localStorage.getItem(CURRENT_USER_KEY);
     if (!raw) {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(DEFAULT_ADMIN_USER));
-      return DEFAULT_ADMIN_USER;
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(DEFAULT_VOLUNTEER_USER));
+      return DEFAULT_VOLUNTEER_USER;
     }
     try {
-      return JSON.parse(raw);
+      const parsed: UserAccount = JSON.parse(raw);
+      if (parsed.email === 'brandon@umpquawildlife.org' || parsed.email === 'syndi@umpquawildlife.org') {
+        parsed.role = 'Admin';
+      }
+      return parsed;
     } catch {
-      return DEFAULT_ADMIN_USER;
+      return DEFAULT_VOLUNTEER_USER;
     }
   },
 

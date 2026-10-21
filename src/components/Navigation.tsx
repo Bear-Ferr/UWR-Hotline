@@ -121,17 +121,19 @@ export const Navigation: React.FC<NavigationProps> = ({
             <span>Rules & Manual</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('admin')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-medium text-xs sm:text-sm transition whitespace-nowrap shrink-0 ${
-              activeTab === 'admin'
-                ? 'bg-amber-500 text-emerald-950 font-extrabold shadow ring-2 ring-amber-300'
-                : 'text-amber-300 hover:bg-emerald-900 hover:text-white font-bold'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-            <span>Admin Portal</span>
-          </button>
+          {isAdminUser && (
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-medium text-xs sm:text-sm transition whitespace-nowrap shrink-0 ${
+                activeTab === 'admin'
+                  ? 'bg-amber-500 text-emerald-950 font-extrabold shadow ring-2 ring-amber-300'
+                  : 'text-amber-300 hover:bg-emerald-900 hover:text-white font-bold'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+              <span>Admin Portal</span>
+            </button>
+          )}
         </div>
       </nav>
     </header>
