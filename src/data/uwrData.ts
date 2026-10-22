@@ -158,8 +158,8 @@ export const REHABBERS: Rehabber[] = [
   {
     id: 'peggy-cheatham',
     name: 'Peggy Cheatham',
-    categories: ['Raptors', 'Vultures & Scavengers', 'Seabirds', 'Fawns/Bears'],
-    speciesSpecialties: ['All Raptors + EAGLES (Special Permit)', 'Turkey Vultures', 'Seabirds Assist', 'Fawns (restricted)'],
+    categories: ['Raptors', 'Vultures & Scavengers', 'Seabirds'],
+    speciesSpecialties: ['All Raptors + EAGLES (Special Permit)', 'Turkey Vultures', 'Seabirds Assist'],
     location: 'Umpqua / Sutherlin',
     primaryPhone: '541-391-2432',
     hours: '6am - 8pm',
@@ -170,8 +170,8 @@ export const REHABBERS: Rehabber[] = [
   {
     id: 'lynn-young',
     name: 'Lynn Young',
-    categories: ['Mammals', 'Fawns/Bears', 'Raccoons'],
-    speciesSpecialties: ['Large Mammals (Bobcat, Fox, Beaver)', 'Fawns & Bear cubs', 'Raccoon babies (Special permit)'],
+    categories: ['Mammals', 'Bears', 'Raccoons'],
+    speciesSpecialties: ['Large Mammals (Bobcat, Fox, Beaver)', 'Bear cubs', 'Raccoon babies (Special permit)'],
     location: 'Myrtle Creek',
     primaryPhone: '541-391-9463',
     landlinePhone: '541-863-5606',
@@ -196,8 +196,8 @@ export const REHABBERS: Rehabber[] = [
   {
     id: 'rhiannon-lafaerique',
     name: 'Rhiannon LaFaerique',
-    categories: ['Fawns/Bears', 'Herptiles'],
-    speciesSpecialties: ['Fawns (Restricted)', 'Turtles'],
+    categories: ['Herptiles'],
+    speciesSpecialties: ['Turtles'],
     location: 'Melrose / Lookingglass',
     primaryPhone: '541-643-3020',
     landlinePhone: '541-679-6838',
@@ -320,12 +320,12 @@ export const PROHIBITED_SPECIES_RULES: PolicyRule[] = [
     referralPhone: '541-391-9463'
   },
   {
-    id: 'older-deer',
-    title: 'Deer Older Than Fawns (PROHIBITED AFTER SEPT 30)',
-    description: 'UWR is ONLY permitted to accept fawns ("young of the year"). The seasonal deadline is September 30. Older deer or deer unable to stand up cannot be rehabbed.',
-    actionRequired: 'Call State Police for euthanasia permission or officer dispatch. NEVER instruct caller how to euthanize animals. Deer moving on their own can be left in place.',
-    referralContact: 'Oregon State Police',
-    referralPhone: '1-800-442-2068'
+    id: 'fawns-and-deer',
+    title: 'Fawns, Deer & Elk (PROHIBITED)',
+    description: 'State regulations and UWR policy strictly prohibit accepting fawns, adult deer, or elk. Volunteers and rehabbers cannot accept or rehabilitate fawns or older deer.',
+    actionRequired: 'Direct caller to ODFW Roseburg Office (541-440-3353) or Oregon State Police Dispatch (1-800-442-2068) for assistance or officer dispatch. Do not accept or transport.',
+    referralContact: 'ODFW Roseburg / Oregon State Police',
+    referralPhone: '541-440-3353'
   },
   {
     id: 'seals-marine',
@@ -373,7 +373,7 @@ export const SPECIES_TAXONOMIC_GROUPS = [
   'Bats & Insectivores (Little Brown Bat, Big Brown Bat, Shrews, Moles)',
   'Raccoons & RVS (Raccoon Babies, Adult Raccoons, Skunks)',
   'Large Carnivores & Predators (Bobcats, Cougars, Coyotes, Foxes, Black Bears)',
-  'Fawns & Ungulates (Fawns, Adult Deer, Elk)',
+  'Fawns & Ungulates (PROHIBITED - Fawns, Adult Deer, Elk)',
   'Herptiles (Turtles, Lizards, Snakes, Frogs, Toads, Salamanders)',
   'Exotic & Escaped Birds (Parrots, Cockatiels, Canaries, Finches)',
   'Domestic Animals & Livestock (Domestic Cats, Dogs, Chickens, Farm Geese)',

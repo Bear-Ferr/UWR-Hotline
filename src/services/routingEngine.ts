@@ -209,28 +209,26 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
     }
   }
 
-  // 9. Check Deer Rules
-  if ((hasSpecificSpecies && lowerSpecies.includes('deer')) || input.category === 'Fawns/Bears') {
-    const today = new Date();
-    const currentMonth = today.getMonth(); // 0 = Jan, 8 = Sept
-    const currentDay = today.getDate();
-    const isPastSept30 = currentMonth > 8 || (currentMonth === 8 && currentDay > 30);
+  // 9. Check Fawns, Deer & Ungulates (PROHIBITED)
+  const isFawnOrDeer =
+    lowerSpecies.includes('fawn') ||
+    lowerSpecies.includes('deer') ||
+    lowerSpecies.includes('elk') ||
+    lowerSpecies.includes('ungulate') ||
+    inputCategoryLower.includes('fawn') ||
+    inputCategoryLower.includes('deer') ||
+    inputCategoryLower.includes('ungulate');
 
-    if (input.ageStage === 'Adult / Older') {
-      isProhibited = true;
-      prohibitedTitle = 'Adult Deer (PROHIBITED)';
-      const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'adult-deer');
-      if (rule) policyWarnings.push(rule);
-      addOfficialReferral('osp-dispatch');
-      addOfficialReferral('odfw-roseburg');
-    } else if (isPastSept30) {
-      isProhibited = true;
-      prohibitedTitle = 'Fawn Past Sept 30 Cutoff (PROHIBITED)';
-      const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'fawn-cutoff');
-      if (rule) policyWarnings.push(rule);
-      addOfficialReferral('odfw-roseburg');
-      addOfficialReferral('osp-dispatch');
-    }
+  if (isFawnOrDeer) {
+    isProhibited = true;
+    prohibitedTitle = 'Fawns, Deer & Elk (PROHIBITED SPECIES)';
+    criticalAlerts.push(
+      'PROHIBITED SPECIES WARNING: Fawns, Deer, and Elk are strictly prohibited under state regulations and UWR policy. UWR volunteers and rehabbers cannot accept or transport fawns or deer. Refer caller directly to ODFW Roseburg Office (541-440-3353) or Oregon State Police Dispatch (1-800-442-2068).'
+    );
+    const rule = PROHIBITED_SPECIES_RULES.find(r => r.id === 'fawns-and-deer');
+    if (rule) policyWarnings.push(rule);
+    addOfficialReferral('odfw-roseburg');
+    addOfficialReferral('osp-dispatch');
   }
 
   // 10. Match Local UWR Rehabbers (if not prohibited & inside watershed)
@@ -246,7 +244,7 @@ export const evaluateDispatchRouting = (input: RoutingInput): RoutingRecommendat
         if (cat === 'Passerine' && (inputCatLower.includes('passerine') || inputCatLower.includes('songbird') || inputCatLower.includes('swallow') || inputCatLower.includes('hummingbird'))) return true;
         if (cat === 'Mammals' && (inputCatLower.includes('mammal') || inputCatLower.includes('rabbit') || inputCatLower.includes('bat') || inputCatLower.includes('carnivore') || inputCatLower.includes('rodent'))) return true;
         if (cat === 'Precocials' && inputCatLower.includes('precocial')) return true;
-        if (cat === 'Fawns/Bears' && (inputCatLower.includes('fawn') || inputCatLower.includes('ungulate'))) return true;
+        if (cat === 'Bears' && inputCatLower.includes('carnivore') && lowerSpecies.includes('bear')) return true;
         if (cat === 'Raccoons' && inputCatLower.includes('raccoon')) return true;
         return false;
       });

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
-import type { RescueReport, UserAccount } from '../services/storageService';
+import type { RescueReport, UserAccount, RehabberNoteEntry } from '../services/storageService';
 import { COMMON_SPECIES_SUGGESTIONS, getTaxonomicGroupForSpecies } from '../data/uwrData';
-import { Clock, Search, MapPin, FileText, Download, CheckCircle, ArrowUpRight, ShieldAlert, BarChart3, Edit3, Trash2, X, Save, AlertTriangle } from 'lucide-react';
+import { Clock, Search, MapPin, FileText, Download, CheckCircle, ArrowUpRight, ShieldAlert, BarChart3, Edit3, Trash2, X, Save, AlertTriangle, Stethoscope, PlusCircle } from 'lucide-react';
 
 interface RescueHistoryProps {
   currentUser: UserAccount;
@@ -63,6 +63,51 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
   // Delete Confirmation State
   const [deletingReport, setDeletingReport] = useState<RescueReport | null>(null);
 
+  // Rehabber Note Modal State
+  const [rehabberNoteReport, setRehabberNoteReport] = useState<RescueReport | null>(null);
+  const [rehabberOutcome, setRehabberOutcome] = useState<NonNullable<RehabberNoteEntry['animalOutcome']>>('In Care / Treatment');
+  const [rehabberNoteText, setRehabberNoteText] = useState('');
+  const [assignSelfAsRehabber, setAssignSelfAsRehabber] = useState(false);
+
+  const handleOpenRehabberNoteModal = (report: RescueReport) => {
+    setRehabberNoteReport(report);
+    setRehabberOutcome('In Care / Treatment');
+    setRehabberNoteText('');
+    setAssignSelfAsRehabber(
+      currentUser.role === 'Rehabber' && (!report.assignedRehabberName || report.assignedRehabberName === 'Not Assigned')
+    );
+  };
+
+  const handleSaveRehabberNote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rehabberNoteReport || !rehabberNoteText.trim()) return;
+
+    const updated = storageService.addRehabberNote(
+      rehabberNoteReport.id,
+      {
+        rehabberId: currentUser.id,
+        rehabberName: currentUser.name,
+        animalOutcome: rehabberOutcome,
+        note: rehabberNoteText.trim()
+      },
+      assignSelfAsRehabber ? currentUser.name : undefined
+    );
+
+    setReports(storageService.getReports());
+    if (updated) {
+      setRehabberNoteReport(updated);
+    }
+    setRehabberNoteText('');
+  };
+
+  const handleDeleteRehabberNote = (reportId: string, noteId: string) => {
+    const updated = storageService.deleteRehabberNote(reportId, noteId);
+    setReports(storageService.getReports());
+    if (updated && rehabberNoteReport?.id === reportId) {
+      setRehabberNoteReport(updated);
+    }
+  };
+
   const handleStatusChange = (reportId: string, newStatus: RescueReport['outcomeStatus']) => {
     storageService.updateReportStatus(reportId, newStatus);
     setReports(storageService.getReports());
@@ -91,23 +136,26 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
     setDeletingReport(null);
   };
 
-  const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'Volunteer Coordinator';
-  const [adminScope, setAdminScope] = useState<'all' | 'mine'>('all');
+  const [viewScope, setViewScope] = useState<'all' | 'assigned' | 'mine'>('all');
 
-  // Filter user reports: Strict user isolation for volunteers; scope toggle for Admins
-  const userReports = isAdmin
-    ? (adminScope === 'mine'
-        ? reports.filter(r => 
+  // All users can view the full organization call history so rehabbers and operators can collaborate and add notes
+  const userReports =
+    viewScope === 'mine'
+      ? reports.filter(
+          r =>
             (currentUser?.id && r.userId === currentUser.id) ||
             (currentUser?.email && r.userEmail && r.userEmail.toLowerCase() === currentUser.email.toLowerCase()) ||
             (currentUser?.name && r.userName === currentUser.name)
-          )
-        : reports)
-    : reports.filter(r => 
-        (currentUser?.id && r.userId === currentUser.id) ||
-        (currentUser?.email && r.userEmail && r.userEmail.toLowerCase() === currentUser.email.toLowerCase()) ||
-        (currentUser?.name && r.userName === currentUser.name)
-      );
+        )
+      : viewScope === 'assigned'
+      ? reports.filter(
+          r =>
+            currentUser?.name &&
+            ((r.assignedRehabberName && r.assignedRehabberName.toLowerCase().includes(currentUser.name.toLowerCase())) ||
+              (r.assignedCarrierName && r.assignedCarrierName.toLowerCase().includes(currentUser.name.toLowerCase())) ||
+              (r.rehabberNotes && r.rehabberNotes.some(n => n.rehabberName.toLowerCase() === currentUser.name.toLowerCase())))
+        )
+      : reports;
 
   const totalReports = userReports.length;
   const rehabberCount = userReports.filter(r => r.outcomeStatus === 'Referred to Rehabber').length;
@@ -118,12 +166,17 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
   const filteredReports = userReports.filter(r => {
     const matchesFilter = selectedOutcomeFilter === 'All' || r.outcomeStatus === selectedOutcomeFilter;
     const term = searchTerm.toLowerCase();
+    const rehabberNotesSearch = (r.rehabberNotes || []).some(
+      n => n.note.toLowerCase().includes(term) || n.rehabberName.toLowerCase().includes(term) || (n.animalOutcome && n.animalOutcome.toLowerCase().includes(term))
+    );
     const matchesSearch =
       r.callerName.toLowerCase().includes(term) ||
       r.callerLocation.toLowerCase().includes(term) ||
       r.speciesCategory.toLowerCase().includes(term) ||
       (r.specificSpecies && r.specificSpecies.toLowerCase().includes(term)) ||
-      r.notes.toLowerCase().includes(term);
+      (r.assignedRehabberName && r.assignedRehabberName.toLowerCase().includes(term)) ||
+      r.notes.toLowerCase().includes(term) ||
+      rehabberNotesSearch;
 
     return matchesFilter && matchesSearch;
   });
@@ -134,23 +187,29 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
       return;
     }
 
-    const headers = ['Report ID', 'Date & Time', 'Caller Name', 'Caller Phone', 'Location', 'Species Category', 'Specific Species', 'Animal Condition', 'Is Cat Bite', 'Is Prohibited/Out of Region', 'Assigned Rehabber/Contact', 'Outcome Status', 'Notes'];
+    const headers = ['Report ID', 'Date & Time', 'Caller Name', 'Caller Phone', 'Location', 'Species Category', 'Specific Species', 'Animal Condition', 'Is Cat Bite', 'Is Prohibited/Out of Region', 'Assigned Rehabber/Contact', 'Outcome Status', 'Call Notes', 'Rehabber Outcome Notes'];
     
-    const rows = reports.map(r => [
-      `"${r.id}"`,
-      `"${r.dateSubmitted}"`,
-      `"${r.callerName.replace(/"/g, '""')}"`,
-      `"${r.callerPhone}"`,
-      `"${r.callerLocation.replace(/"/g, '""')}"`,
-      `"${r.speciesCategory.replace(/"/g, '""')}"`,
-      `"${(r.specificSpecies || r.speciesCategory).replace(/"/g, '""')}"`,
-      `"${r.animalCondition.replace(/"/g, '""')}"`,
-      r.isCatCaught ? 'YES' : 'NO',
-      r.isProhibited ? 'YES' : 'NO',
-      `"${(r.assignedRehabberName || 'None').replace(/"/g, '""')}"`,
-      `"${r.outcomeStatus}"`,
-      `"${r.notes.replace(/"/g, '""')}"`
-    ]);
+    const rows = reports.map(r => {
+      const formattedRehabberNotes = (r.rehabberNotes || [])
+        .map(n => `[${n.dateAdded} - ${n.rehabberName} (${n.animalOutcome || 'Update'})]: ${n.note}`)
+        .join(' | ');
+      return [
+        `"${r.id}"`,
+        `"${r.dateSubmitted}"`,
+        `"${r.callerName.replace(/"/g, '""')}"`,
+        `"${r.callerPhone}"`,
+        `"${r.callerLocation.replace(/"/g, '""')}"`,
+        `"${r.speciesCategory.replace(/"/g, '""')}"`,
+        `"${(r.specificSpecies || r.speciesCategory).replace(/"/g, '""')}"`,
+        `"${r.animalCondition.replace(/"/g, '""')}"`,
+        r.isCatCaught ? 'YES' : 'NO',
+        r.isProhibited ? 'YES' : 'NO',
+        `"${(r.assignedRehabberName || 'None').replace(/"/g, '""')}"`,
+        `"${r.outcomeStatus}"`,
+        `"${r.notes.replace(/"/g, '""')}"`,
+        `"${formattedRehabberNotes.replace(/"/g, '""')}"`
+      ];
+    });
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
@@ -169,41 +228,51 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
             <Clock className="w-6 h-6 text-amber-400" />
-            {isAdmin 
-              ? (adminScope === 'mine' ? 'My Personal Hotline Call Log' : 'Organization Master Rescue Call Log')
-              : 'My Rescue Call History & Personal Log'
-            }
+            {viewScope === 'mine'
+              ? 'My Logged Hotline Calls'
+              : viewScope === 'assigned'
+              ? 'Calls Assigned to Me / My Rehab Animals'
+              : 'Organization Master Rescue Call Log'}
           </h2>
           <div className="flex flex-wrap items-center gap-3 text-xs text-emerald-200 mt-1">
             <span>
-              Logged in as <span className="font-bold text-amber-300">{currentUser.name}</span> ({currentUser.role}) • {totalReports} Calls
+              Logged in as <span className="font-bold text-amber-300">{currentUser.name}</span> ({currentUser.role}) • Showing {totalReports} Calls
             </span>
-            {isAdmin && (
-              <div className="inline-flex bg-emerald-950/80 rounded-lg p-0.5 border border-emerald-700">
-                <button
-                  type="button"
-                  onClick={() => setAdminScope('all')}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
-                    adminScope === 'all'
-                      ? 'bg-amber-500 text-emerald-950 shadow'
-                      : 'text-emerald-300 hover:text-white'
-                  }`}
-                >
-                  All Org Calls ({reports.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAdminScope('mine')}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
-                    adminScope === 'mine'
-                      ? 'bg-amber-500 text-emerald-950 shadow'
-                      : 'text-emerald-300 hover:text-white'
-                  }`}
-                >
-                  My Calls Only
-                </button>
-              </div>
-            )}
+            <div className="inline-flex bg-emerald-950/80 rounded-lg p-0.5 border border-emerald-700">
+              <button
+                type="button"
+                onClick={() => setViewScope('all')}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+                  viewScope === 'all'
+                    ? 'bg-amber-500 text-emerald-950 shadow'
+                    : 'text-emerald-300 hover:text-white'
+                }`}
+              >
+                All Org Calls ({reports.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewScope('assigned')}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+                  viewScope === 'assigned'
+                    ? 'bg-amber-500 text-emerald-950 shadow'
+                    : 'text-emerald-300 hover:text-white'
+                }`}
+              >
+                My Rehab / Assigned
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewScope('mine')}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+                  viewScope === 'mine'
+                    ? 'bg-amber-500 text-emerald-950 shadow'
+                    : 'text-emerald-300 hover:text-white'
+                }`}
+              >
+                Logged by Me
+              </button>
+            </div>
           </div>
         </div>
 
@@ -364,17 +433,44 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
                       </div>
                       <div className="text-[11px] text-gray-500 mt-0.5">{report.animalCondition}</div>
                       {report.notes && (
-                        <div className="text-[11px] text-gray-600 italic mt-1 line-clamp-2 bg-gray-50 p-1.5 rounded border">
-                          "{report.notes}"
+                        <div className="text-[11px] text-gray-600 italic mt-1 bg-gray-50 p-1.5 rounded border">
+                          <span className="font-semibold not-italic text-gray-700">Call Note: </span>"{report.notes}"
+                        </div>
+                      )}
+                      {report.rehabberNotes && report.rehabberNotes.length > 0 && (
+                        <div className="mt-2 space-y-1.5">
+                          {report.rehabberNotes.map(rNote => (
+                            <div
+                              key={rNote.id}
+                              className="bg-emerald-50/90 border border-emerald-200 rounded-lg p-2 text-[11px] text-emerald-950 space-y-0.5 shadow-2xs"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-bold flex items-center gap-1 text-emerald-900">
+                                  <Stethoscope className="w-3 h-3 text-emerald-700 shrink-0" />
+                                  <span>Rehabber Note ({rNote.rehabberName})</span>
+                                  {rNote.animalOutcome && (
+                                    <span className="bg-amber-200/80 text-amber-950 px-1.5 py-0.2 rounded text-[10px] font-extrabold">
+                                      {rNote.animalOutcome}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="text-[10px] text-emerald-700 whitespace-nowrap">{rNote.dateAdded}</span>
+                              </div>
+                              <div className="text-gray-800 leading-snug">{rNote.note}</div>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </td>
 
                     <td className="p-3.5 text-xs font-semibold text-gray-800">
-                      {report.assignedRehabberName || 'Not Assigned'}
+                      <div>{report.assignedRehabberName || 'Not Assigned'}</div>
                       {report.assignedCarrierName && (
                         <div className="text-[11px] text-emerald-700 font-normal">Carrier: {report.assignedCarrierName}</div>
                       )}
+                      <div className="text-[10px] text-gray-400 font-normal mt-0.5">
+                        Logged by: {report.userName}
+                      </div>
                     </td>
 
                     <td className="p-3.5">
@@ -388,11 +484,21 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
                         <option value="Referred to ODFW/Police">Referred to ODFW/Police</option>
                         <option value="Resolved - Left in Place">Resolved - Left in Place</option>
                         <option value="Pending">Pending</option>
+                        <option value="Closed">Closed</option>
                       </select>
                     </td>
 
                     <td className="p-3.5 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end space-x-1.5">
+                        <button
+                          onClick={() => handleOpenRehabberNoteModal(report)}
+                          title="Add Rehabber Animal Outcome / Follow-Up Note"
+                          className="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-2.5 py-1.5 rounded-lg border border-emerald-300 text-xs flex items-center space-x-1 transition shadow-2xs"
+                        >
+                          <PlusCircle className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Rehabber Note</span>
+                        </button>
+
                         <button
                           onClick={() => handleOpenEdit(report)}
                           title="Edit Call Record"
@@ -417,6 +523,162 @@ export const RescueHistory: React.FC<RescueHistoryProps> = ({ currentUser }) => 
           </div>
         )}
       </div>
+
+      {/* REHABBER ANIMAL OUTCOME & NOTES MODAL */}
+      {rehabberNoteReport && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-emerald-200 overflow-hidden animate-in zoom-in-95">
+            <div className="bg-emerald-900 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Stethoscope className="w-5 h-5 text-amber-400" />
+                <div>
+                  <h3 className="font-bold text-base">Rehabber Animal Outcome & Follow-Up Notes</h3>
+                  <p className="text-[11px] text-emerald-200">
+                    Record what happened to the animal taken in from this call
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setRehabberNoteReport(null)}
+                className="text-emerald-200 hover:text-white p-1 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs max-h-[82vh] overflow-y-auto">
+              {/* Call Summary Box */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-sm text-emerald-950">
+                    {rehabberNoteReport.specificSpecies || rehabberNoteReport.speciesCategory}
+                  </span>
+                  <span className="text-[11px] text-gray-500">{rehabberNoteReport.dateSubmitted}</span>
+                </div>
+                <div className="text-gray-700">
+                  <span className="font-semibold">Caller:</span> {rehabberNoteReport.callerName} ({rehabberNoteReport.callerPhone}) • {rehabberNoteReport.callerLocation}
+                </div>
+                <div className="text-gray-700">
+                  <span className="font-semibold">Initial Condition:</span> {rehabberNoteReport.animalCondition}
+                </div>
+                {rehabberNoteReport.notes && (
+                  <div className="text-gray-600 italic pt-1">
+                    <span className="font-semibold not-italic">Hotline Note:</span> "{rehabberNoteReport.notes}"
+                  </div>
+                )}
+              </div>
+
+              {/* Existing Rehabber Notes History */}
+              {rehabberNoteReport.rehabberNotes && rehabberNoteReport.rehabberNotes.length > 0 && (
+                <div className="space-y-2">
+                  <div className="font-bold text-emerald-950 uppercase tracking-wider text-[11px]">
+                    Existing Rehabber Follow-Up Notes ({rehabberNoteReport.rehabberNotes.length})
+                  </div>
+                  <div className="space-y-2">
+                    {rehabberNoteReport.rehabberNotes.map(rNote => (
+                      <div
+                        key={rNote.id}
+                        className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3 space-y-1"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="font-bold text-emerald-950 flex items-center gap-1.5">
+                            <span>{rNote.rehabberName}</span>
+                            {rNote.animalOutcome && (
+                              <span className="bg-amber-200 text-amber-950 px-2 py-0.5 rounded-full text-[10px] font-extrabold">
+                                {rNote.animalOutcome}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-gray-500">{rNote.dateAdded}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRehabberNote(rehabberNoteReport.id, rNote.id)}
+                              className="text-red-500 hover:text-red-700 p-0.5"
+                              title="Remove note"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{rNote.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add New Rehabber Note Form */}
+              <form onSubmit={handleSaveRehabberNote} className="space-y-3 border-t pt-3">
+                <div className="font-bold text-emerald-950 uppercase tracking-wider text-[11px]">
+                  + Add New Rehabber Update / Animal Outcome
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    Animal Status / Disposition
+                  </label>
+                  <select
+                    value={rehabberOutcome}
+                    onChange={e => setRehabberOutcome(e.target.value as NonNullable<RehabberNoteEntry['animalOutcome']>)}
+                    className="w-full px-3 py-2 border rounded-lg bg-white font-semibold text-gray-900 focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="In Care / Treatment">In Care / Receiving Treatment</option>
+                    <option value="Released to Wild">Healthy & Released to Wild</option>
+                    <option value="Transferred to Facility">Transferred to Another Rehabber / Vet / Facility</option>
+                    <option value="Euthanized / Deceased">Passed Away / Humanely Euthanized</option>
+                    <option value="DOA (Dead on Arrival)">DOA (Dead on Arrival)</option>
+                    <option value="Other Update">Other Follow-Up Note</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    Rehabber Notes (What happened to the animal?)
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={rehabberNoteText}
+                    onChange={e => setRehabberNoteText(e.target.value)}
+                    placeholder="Enter intake exam findings, medical care provided, weight/condition, transfer details, or release outcome..."
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <label className="flex items-center space-x-2 cursor-pointer pt-1">
+                  <input
+                    type="checkbox"
+                    checked={assignSelfAsRehabber}
+                    onChange={e => setAssignSelfAsRehabber(e.target.checked)}
+                    className="rounded text-emerald-700 focus:ring-emerald-500"
+                  />
+                  <span className="font-semibold text-gray-700">
+                    Set/update Assigned Rehabber on this call record to <strong className="text-emerald-900">{currentUser.name}</strong>
+                  </span>
+                </label>
+
+                <div className="flex items-center justify-end space-x-2 pt-3 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setRehabberNoteReport(null)}
+                    className="px-4 py-2 border rounded-lg font-bold text-gray-600 hover:bg-gray-100"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg font-bold flex items-center space-x-1.5 shadow"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Save Rehabber Note</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* EDIT RECORD MODAL OVERLAY */}
       {editingReport && (

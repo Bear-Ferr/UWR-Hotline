@@ -4,6 +4,7 @@ import type { ActiveTab } from './components/Navigation';
 import { DispatchWizard } from './components/DispatchWizard';
 import { DirectoryView } from './components/DirectoryView';
 import { RescueHistory } from './components/RescueHistory';
+import { HotlineSchedule } from './components/HotlineSchedule';
 import { KnowledgeBase } from './components/KnowledgeBase';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AuthModal } from './components/AuthModal';
@@ -94,6 +95,8 @@ export const App: React.FC = () => {
         {activeTab === 'directory' && <DirectoryView />}
 
         {activeTab === 'history' && <RescueHistory currentUser={currentUser} />}
+
+        {activeTab === 'schedule' && <HotlineSchedule currentUser={currentUser} />}
 
         {activeTab === 'knowledge-base' && <KnowledgeBase />}
 

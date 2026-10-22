@@ -21,6 +21,15 @@ export interface UserAccount {
   joinedDate: string;
 }
 
+export interface RehabberNoteEntry {
+  id: string;
+  rehabberId: string;
+  rehabberName: string;
+  dateAdded: string;
+  animalOutcome?: 'In Care / Treatment' | 'Released to Wild' | 'Transferred to Facility' | 'Euthanized / Deceased' | 'DOA (Dead on Arrival)' | 'Other Update';
+  note: string;
+}
+
 export interface RescueReport {
   id: string;
   userId: string;
@@ -40,6 +49,30 @@ export interface RescueReport {
   assignedCarrierName?: string;
   outcomeStatus: 'Pending' | 'Referred to Rehabber' | 'Referred to Carrier' | 'Referred to ODFW/Police' | 'Resolved - Left in Place' | 'Closed';
   notes: string;
+  rehabberNotes?: RehabberNoteEntry[];
+}
+
+export type ShiftSlot = '8-2' | '2-8';
+
+export interface HotlineShiftSignup {
+  id: string; // e.g., shift_2026-10-21_8-2
+  date: string; // YYYY-MM-DD
+  slot: ShiftSlot; // '8-2' (8:00 AM - 2:00 PM) or '2-8' (2:00 PM - 8:00 PM)
+  volunteerId: string;
+  volunteerName: string;
+  volunteerPhone: string;
+  volunteerEmail?: string;
+  notes?: string;
+  signedUpAt: string;
+}
+
+export interface GoogleCalendarSettings {
+  calendarId: string;
+  embedUrl?: string;
+  webhookUrl?: string;
+  autoPromptAddEvent: boolean;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 const USERS_KEY = 'uwr_app_users_v1';
@@ -47,6 +80,8 @@ const CURRENT_USER_KEY = 'uwr_app_current_user_v1';
 const REPORTS_KEY = 'uwr_app_rescue_reports_v1';
 const REPORTS_BACKUP_KEY = 'uwr_app_rescue_reports_backup_v1';
 const DELETED_USERS_KEY = 'uwr_app_deleted_user_ids_v1';
+const SHIFTS_KEY = 'uwr_app_hotline_shifts_v1';
+const GCAL_SETTINGS_KEY = 'uwr_app_gcal_settings_v1';
 
 // Default Admin Coordinator and Volunteer Accounts
 const DEFAULT_ADMIN_USER: UserAccount = {
@@ -658,6 +693,45 @@ export const storageService = {
     }
   },
 
+  addRehabberNote(
+    reportId: string,
+    noteData: Omit<RehabberNoteEntry, 'id' | 'dateAdded'>,
+    assignRehabberName?: string
+  ): RescueReport | null {
+    const reports = this.getReports();
+    const target = reports.find(r => r.id === reportId);
+    if (!target) return null;
+
+    const newEntry: RehabberNoteEntry = {
+      ...noteData,
+      id: `rnote-${Date.now()}`,
+      dateAdded: new Date().toLocaleString()
+    };
+
+    const updatedReport: RescueReport = {
+      ...target,
+      assignedRehabberName: assignRehabberName || target.assignedRehabberName,
+      rehabberNotes: [...(target.rehabberNotes || []), newEntry]
+    };
+
+    this.updateReport(updatedReport);
+    return updatedReport;
+  },
+
+  deleteRehabberNote(reportId: string, noteId: string): RescueReport | null {
+    const reports = this.getReports();
+    const target = reports.find(r => r.id === reportId);
+    if (!target) return null;
+
+    const updatedReport: RescueReport = {
+      ...target,
+      rehabberNotes: (target.rehabberNotes || []).filter(n => n.id !== noteId)
+    };
+
+    this.updateReport(updatedReport);
+    return updatedReport;
+  },
+
   deleteReport(reportId: string): void {
     const reports = this.getReports().filter(r => r.id !== reportId);
     localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
@@ -681,15 +755,152 @@ export const storageService = {
     return all;
   },
 
-  getUserReports(user: UserAccount): RescueReport[] {
-    const all = this.getReports();
-    if (user.role === 'Admin' || user.role === 'Volunteer Coordinator') {
-      return all;
+  getUserReports(_user?: UserAccount): RescueReport[] {
+    return this.getReports();
+  },
+
+  // --- HOTLINE SHIFT SCHEDULING & GOOGLE CALENDAR ---
+  getShifts(): HotlineShiftSignup[] {
+    const raw = localStorage.getItem(SHIFTS_KEY);
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
     }
-    return all.filter(
-      r => r.userId === user.id ||
-      (r.userEmail && user.email && r.userEmail.toLowerCase() === user.email.toLowerCase()) ||
-      r.userName === user.name
-    );
+  },
+
+  subscribeToShifts(callback: (shifts: HotlineShiftSignup[]) => void): () => void {
+    if (isFirebaseConfigured && db) {
+      const q = query(collection(db, 'uwr_hotline_shifts'));
+      const unsubscribe = onSnapshot(q, snapshot => {
+        const cloudShifts: HotlineShiftSignup[] = [];
+        const removedIds = new Set<string>();
+        snapshot.docChanges().forEach(change => {
+          if (change.type === 'removed') {
+            removedIds.add(change.doc.id);
+          }
+        });
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data() as HotlineShiftSignup;
+          if (data && data.id) {
+            cloudShifts.push(data);
+          }
+        });
+
+        const localShifts = this.getShifts().filter(s => !removedIds.has(s.id));
+        const shiftMap = new Map<string, HotlineShiftSignup>();
+        localShifts.forEach(s => shiftMap.set(s.id, s));
+        cloudShifts.forEach(s => shiftMap.set(s.id, s));
+
+        const merged = Array.from(shiftMap.values());
+        localStorage.setItem(SHIFTS_KEY, JSON.stringify(merged));
+        callback(merged);
+      }, err => {
+        console.warn('Firestore shifts subscription fallback:', err);
+        callback(this.getShifts());
+      });
+      return unsubscribe;
+    }
+
+    callback(this.getShifts());
+    return () => {};
+  },
+
+  signUpForShift(data: Omit<HotlineShiftSignup, 'id' | 'signedUpAt'>): HotlineShiftSignup {
+    const shiftId = `shift_${data.date}_${data.slot}`;
+    const newShift: HotlineShiftSignup = {
+      ...data,
+      id: shiftId,
+      signedUpAt: new Date().toLocaleString()
+    };
+
+    const shifts = this.getShifts().filter(s => s.id !== shiftId);
+    shifts.push(newShift);
+    localStorage.setItem(SHIFTS_KEY, JSON.stringify(shifts));
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'uwr_hotline_shifts', shiftId), newShift).catch(console.error);
+    }
+
+    // If a Google Calendar Webhook / Apps Script URL is configured, fire it non-blockingly
+    const gcal = this.getGoogleCalendarSettings();
+    if (gcal.webhookUrl && gcal.webhookUrl.startsWith('http')) {
+      fetch(gcal.webhookUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'CREATE_SHIFT',
+          shift: newShift,
+          calendarId: gcal.calendarId
+        })
+      }).catch(() => {});
+    }
+
+    return newShift;
+  },
+
+  cancelShift(shiftId: string): void {
+    const shifts = this.getShifts().filter(s => s.id !== shiftId);
+    localStorage.setItem(SHIFTS_KEY, JSON.stringify(shifts));
+
+    if (isFirebaseConfigured && db) {
+      deleteDoc(doc(db, 'uwr_hotline_shifts', shiftId)).catch(console.error);
+    }
+  },
+
+  getGoogleCalendarSettings(): GoogleCalendarSettings {
+    const raw = localStorage.getItem(GCAL_SETTINGS_KEY);
+    if (!raw) {
+      return {
+        calendarId: '',
+        embedUrl: '',
+        webhookUrl: '',
+        autoPromptAddEvent: true
+      };
+    }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {
+        calendarId: '',
+        embedUrl: '',
+        webhookUrl: '',
+        autoPromptAddEvent: true
+      };
+    }
+  },
+
+  saveGoogleCalendarSettings(settings: GoogleCalendarSettings): void {
+    const payload: GoogleCalendarSettings = {
+      ...settings,
+      updatedAt: new Date().toLocaleString()
+    };
+    localStorage.setItem(GCAL_SETTINGS_KEY, JSON.stringify(payload));
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'uwr_settings', 'google_calendar'), payload, { merge: true }).catch(console.error);
+    }
+  },
+
+  subscribeToGoogleCalendarSettings(callback: (settings: GoogleCalendarSettings) => void): () => void {
+    if (isFirebaseConfigured && db) {
+      const unsubscribe = onSnapshot(doc(db, 'uwr_settings', 'google_calendar'), docSnap => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as GoogleCalendarSettings;
+          localStorage.setItem(GCAL_SETTINGS_KEY, JSON.stringify(data));
+          callback(data);
+        } else {
+          callback(this.getGoogleCalendarSettings());
+        }
+      }, () => {
+        callback(this.getGoogleCalendarSettings());
+      });
+      return unsubscribe;
+    }
+    callback(this.getGoogleCalendarSettings());
+    return () => {};
   }
 };

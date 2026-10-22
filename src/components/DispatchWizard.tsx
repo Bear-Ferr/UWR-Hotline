@@ -52,6 +52,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
   const isPigeonOrDoveSpecies = lowerSpecies.includes('pigeon') || lowerSpecies.includes('dove') || inferredCategory === 'Pigeons & Doves';
   const isMarineSpecies = lowerSpecies.includes('seal') || lowerSpecies.includes('sea lion') || lowerSpecies.includes('walrus') || lowerSpecies.includes('marine mammal') || lowerSpecies.includes('otter');
   const isDomesticSpecies = lowerSpecies.includes('cat') || lowerSpecies.includes('dog') || lowerSpecies.includes('chicken') || lowerSpecies.includes('rooster') || lowerSpecies.includes('peacock') || lowerSpecies.includes('parrot') || lowerSpecies.includes('cockatiel') || lowerSpecies.includes('guinea pig') || lowerSpecies.includes('ferret') || lowerSpecies.includes('rock pigeon') || lowerSpecies.includes('exotic');
+  const isFawnOrDeerSpecies = lowerSpecies.includes('fawn') || lowerSpecies.includes('deer') || lowerSpecies.includes('elk') || inferredCategory === 'Fawns & Ungulates';
 
   // Auto-sync flags when species changes
   useEffect(() => {
@@ -127,7 +128,6 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
     setCallerPhone('');
     setCallerLocation('Roseburg');
     setExternalCounty('Lane County (Eugene/Springfield)');
-    setCategory('Passerine');
     setSpecificSpecies('');
     setAgeStage('Unknown');
     setPhysicalCondition('Injured / Sick / Bleeding');
@@ -303,7 +303,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
             </div>
 
             {/* Dynamic Special Circumstances Section - Only shown when relevant to species */}
-            {(isRaccoonSpecies || isPigeonOrDoveSpecies || isMarineSpecies || isDomesticSpecies) && (
+            {(isRaccoonSpecies || isPigeonOrDoveSpecies || isMarineSpecies || isDomesticSpecies || isFawnOrDeerSpecies) && (
               <div className="bg-amber-50/80 p-3 rounded-lg border border-amber-200 space-y-2 animate-in fade-in">
                 <h3 className="font-semibold text-amber-950 text-xs uppercase tracking-wider flex items-center gap-1.5">
                   <Info className="w-3.5 h-3.5 text-amber-700" />
@@ -346,6 +346,13 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                     <div className="flex items-center space-x-2 bg-amber-100 p-2 rounded border border-amber-400 text-amber-950 font-bold">
                       <AlertTriangle className="w-4 h-4 text-amber-800 shrink-0" />
                       <span>Domestic Pet / Exotic Animal (Auto-flagged for Animal Control / Saving Grace)</span>
+                    </div>
+                  )}
+
+                  {isFawnOrDeerSpecies && (
+                    <div className="flex items-center space-x-2 bg-red-100 p-2 rounded border border-red-400 text-red-950 font-bold">
+                      <ShieldAlert className="w-4 h-4 text-red-700 shrink-0" />
+                      <span>Fawn / Deer / Elk (PROHIBITED — Auto-flagged for ODFW / State Police Referral)</span>
                     </div>
                   )}
                 </div>
@@ -403,7 +410,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                 type="button"
                 onClick={() => {
                   const topRehabber = recommendation.recommendedRehabbers[0]?.rehabber;
-                  const smsText = `[UWR DISPATCH]\nSpecies: ${specificSpecies || category}\nLocation: ${callerLocation === 'Out of Region / Other County' ? externalCounty : callerLocation}\nCaller: ${callerName || 'Anonymous'} (${callerPhone || 'No Phone'})\nCondition: ${physicalCondition} (${ageStage})\nAssigned: ${recommendation.isOutOfRegion ? (recommendation.outOfRegionCenter?.facilityName || 'External Center') : (topRehabber?.name ? `${topRehabber.name} (${topRehabber.primaryPhone})` : 'UWR Hotline')}\nNotes: ${notes || 'None'}`;
+                  const smsText = `[UWR DISPATCH]\nSpecies: ${specificSpecies || inferredCategory}\nLocation: ${callerLocation === 'Out of Region / Other County' ? externalCounty : callerLocation}\nCaller: ${callerName || 'Anonymous'} (${callerPhone || 'No Phone'})\nCondition: ${physicalCondition} (${ageStage})\nAssigned: ${recommendation.isOutOfRegion ? (recommendation.outOfRegionCenter?.facilityName || 'External Center') : (topRehabber?.name ? `${topRehabber.name} (${topRehabber.primaryPhone})` : 'UWR Hotline')}\nNotes: ${notes || 'None'}`;
                   navigator.clipboard.writeText(smsText);
                   alert('📱 SMS Dispatch Script copied to clipboard! You can now paste and text this directly to rehabbers or transport volunteers.');
                 }}
@@ -508,7 +515,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                   UWR CANNOT REHAB THIS ANIMAL ({recommendation.prohibitedTitle})
                 </h3>
                 <p className="text-xs font-medium text-red-800 mt-1">
-                  According to UWR policy and Oregon state regulations, volunteers cannot take non-native species, adult raccoons, coyotes, seals, domestic pets, or older deer.
+                  According to UWR policy and Oregon state regulations, volunteers cannot take non-native species, fawns, deer, elk, adult raccoons, coyotes, seals, or domestic pets.
                 </p>
               </div>
             </div>

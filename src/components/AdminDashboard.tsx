@@ -178,26 +178,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
       'Prohibited Species',
       'Assigned Rehabber',
       'Outcome Status',
-      'Notes'
+      'Notes',
+      'Rehabber Outcome Notes'
     ];
 
-    const rows = reports.map(r => [
-      `"${r.id}"`,
-      `"${r.dateSubmitted}"`,
-      `"${r.userName}"`,
-      `"${r.userEmail || ''}"`,
-      `"${r.callerName}"`,
-      `"${r.callerPhone}"`,
-      `"${r.callerLocation}"`,
-      `"${r.speciesCategory}"`,
-      `"${r.specificSpecies || ''}"`,
-      `"${r.animalCondition.replace(/"/g, '""')}"`,
-      `"${r.isCatCaught ? 'YES' : 'NO'}"`,
-      `"${r.isProhibited ? 'YES' : 'NO'}"`,
-      `"${r.assignedRehabberName || ''}"`,
-      `"${r.outcomeStatus}"`,
-      `"${(r.notes || '').replace(/"/g, '""')}"`
-    ]);
+    const rows = reports.map(r => {
+      const rehabNotesStr = (r.rehabberNotes || [])
+        .map(n => `[${n.createdAt} - ${n.authorName} (${n.animalDisposition || 'Update'})]: ${n.noteText}`)
+        .join(' | ');
+      return [
+        `"${r.id}"`,
+        `"${r.dateSubmitted}"`,
+        `"${r.userName}"`,
+        `"${r.userEmail || ''}"`,
+        `"${r.callerName}"`,
+        `"${r.callerPhone}"`,
+        `"${r.callerLocation}"`,
+        `"${r.speciesCategory}"`,
+        `"${r.specificSpecies || ''}"`,
+        `"${r.animalCondition.replace(/"/g, '""')}"`,
+        `"${r.isCatCaught ? 'YES' : 'NO'}"`,
+        `"${r.isProhibited ? 'YES' : 'NO'}"`,
+        `"${r.assignedRehabberName || ''}"`,
+        `"${r.outcomeStatus}"`,
+        `"${(r.notes || '').replace(/"/g, '""')}"`,
+        `"${rehabNotesStr.replace(/"/g, '""')}"`
+      ];
+    });
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
@@ -654,6 +661,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 {report.notes && (
                   <div className="bg-gray-50 p-2.5 rounded border text-xs text-gray-800 italic">
                     "{report.notes}"
+                  </div>
+                )}
+
+                {report.rehabberNotes && report.rehabberNotes.length > 0 && (
+                  <div className="bg-emerald-50/80 border border-emerald-200 rounded-lg p-3 space-y-2">
+                    <div className="text-[11px] font-extrabold text-emerald-900 uppercase tracking-wider">
+                      Rehabber Outcome & Care Notes ({report.rehabberNotes.length})
+                    </div>
+                    <div className="space-y-1.5">
+                      {report.rehabberNotes.map(note => (
+                        <div key={note.id} className="bg-white border border-emerald-100 rounded p-2 text-xs">
+                          <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-emerald-950">{note.authorName}</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">
+                                {note.authorRole}
+                              </span>
+                              {note.animalDisposition && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                  {note.animalDisposition}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-400">{note.createdAt}</span>
+                          </div>
+                          <p className="text-gray-800">{note.noteText}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
